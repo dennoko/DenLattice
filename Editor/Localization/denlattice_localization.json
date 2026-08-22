@@ -92,13 +92,13 @@
     },
     {
       "key": "inspector.resolution",
-      "ja": "格子数 (U/V/W)",
-      "en": "Resolution (U/V/W)"
+      "ja": "格子数",
+      "en": "Resolution"
     },
     {
       "key": "inspector.resolution_help",
-      "ja": "格子数を変えても、今できている形は崩れません。変形は頂点ごとの移動量として保持されているためです。",
-      "en": "Changing the resolution never alters the current shape: the deformation is stored as per-vertex offsets."
+      "ja": "格子数を変えても、今できている形は崩れません。変形は頂点ごとの移動量として保持されているためです。制御点はボックスの格子位置へ戻ります。",
+      "en": "Changing the resolution never alters the current shape: the deformation is stored as per-vertex offsets. The control points return to the box grid."
     },
     {
       "key": "inspector.interpolation",
@@ -131,6 +131,16 @@
       "en": "Move, rotate and scale the box in the Scene View. Moving the box resets the control points to the grid, but the mesh shape is unchanged."
     },
     {
+      "key": "inspector.fit_box",
+      "ja": "対象に合わせる",
+      "en": "Fit to Targets"
+    },
+    {
+      "key": "inspector.center_box",
+      "ja": "中心へ",
+      "en": "Center"
+    },
+    {
       "key": "inspector.btn_reset_cage",
       "ja": "制御点をリセット",
       "en": "Reset Cage"
@@ -152,8 +162,8 @@
     },
     {
       "key": "inspector.mirror_help",
-      "ja": "ラティスボックスのローカル軸で対称にします。左右対称の変形をするには、ボックスをアバターの中心へ合わせてください（編集中のオーバーレイに「中心へ」ボタンがあります）。",
-      "en": "Symmetry is applied along the box's local axis. For left-right symmetry, align the box with the avatar center (see the \"Center\" button in the editing overlay)."
+      "ja": "ラティスボックスのローカル軸で対称にします。左右対称の変形をするには、ボックスをアバターの中心へ合わせてください（上の「中心へ」ボタン）。",
+      "en": "Symmetry is applied along the box's local axis. For left-right symmetry, align the box with the avatar center using the \"Center\" button above."
     },
     {
       "key": "inspector.bake_header",
@@ -226,16 +236,6 @@
       "en": "Resolution"
     },
     {
-      "key": "overlay.interpolation",
-      "ja": "補間方式",
-      "en": "Interpolation"
-    },
-    {
-      "key": "overlay.freeze_border",
-      "ja": "境界を固定",
-      "en": "Freeze Border"
-    },
-    {
       "key": "overlay.mirror_on",
       "ja": "ミラー: ON",
       "en": "Mirror: ON"
@@ -269,16 +269,6 @@
       "key": "overlay.box_scale",
       "ja": "拡縮",
       "en": "Scale"
-    },
-    {
-      "key": "overlay.fit_box",
-      "ja": "対象に合わせる",
-      "en": "Fit to Targets"
-    },
-    {
-      "key": "overlay.center_box",
-      "ja": "中心へ",
-      "en": "Center"
     },
     {
       "key": "overlay.reset_cage",

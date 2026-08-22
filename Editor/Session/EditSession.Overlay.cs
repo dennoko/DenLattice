@@ -3,19 +3,42 @@ using UnityEngine;
 
 namespace Dennokoworks.DenLattice.Editor
 {
+    /// <summary>
+    /// シーンビュー上の操作パネル。
+    ///
+    /// ここに置くのは<b>編集中に手が止まる操作</b>だけに絞っている。格子数・ミラー・
+    /// ボックス操作は変形しながら何度も切り替えるが、補間方式や境界固定のように
+    /// 一度決めたら触らない設定は Inspector 側にだけ置く。パネルが大きくなるほど
+    /// シーンが隠れ、編集そのものの邪魔になるため。
+    /// </summary>
     internal partial class EditSession
     {
         private Rect _overlayRect;
+        private Vector2 _overlayMaxPosition;
         private static bool _hasCustomOverlayPosition;
         private static Vector2 _overlayPosition;
         private static bool _overlayDragging;
         private static Vector2 _overlayDragOffset;
 
+        private const float OverlayWidth = 340f;
+        private const float OverlayMargin = 10f;
+        private const float OverlayBottomPadding = 8f;
+
+        /// <summary>中身を測る前の暫定の高さ。実測値が入るまでの 1 フレームだけ使う。</summary>
+        private float _overlayHeight = 240f;
+
         // Layout イベント時に固定する、レイアウト構成に影響する状態
         private bool _overlayBoxMode;
         private bool _overlayMirror;
 
-        private void DrawOverlay(SceneView sceneView)
+        /// <summary>
+        /// パネルの矩形を決める。
+        ///
+        /// ハンドル処理より<b>先に</b>呼ぶ必要がある。パネルは最後に（＝ラティスやハンドルの上に）
+        /// 描くが、その下のハンドルに操作が抜けないよう、当たり判定は先に確定させておく
+        /// （→ <see cref="OnSceneGui"/>、<see cref="DrawOverlay"/>）。
+        /// </summary>
+        private void UpdateOverlayLayout(SceneView sceneView)
         {
             // Layout と Repaint で GUILayout の構成が変わると
             // 「Getting control N's position in a group with only M controls」で例外になる。
@@ -28,34 +51,46 @@ namespace Dennokoworks.DenLattice.Editor
                 _overlayMirror = _component.mirror;
             }
 
-            var current = Event.current;
-
-            var overlayHeight = 318f
-                                + (_overlayMirror ? 26f : 0f)
-                                + (_overlayBoxMode ? 26f : 0f)
-                                + (_overlayShowsWarning ? 44f : 0f);
-            const float overlayWidth = 340f;
-            const float margin = 10f;
-
             var canvasWidth = GetCanvasWidth(sceneView);
             var canvasHeight = GetCanvasHeight(sceneView);
 
-            var maxX = Mathf.Max(margin, canvasWidth - overlayWidth - margin);
-            var maxY = Mathf.Max(margin, canvasHeight - overlayHeight - margin);
+            _overlayMaxPosition = new Vector2(
+                Mathf.Max(OverlayMargin, canvasWidth - OverlayWidth - OverlayMargin),
+                Mathf.Max(OverlayMargin, canvasHeight - _overlayHeight - OverlayMargin));
 
             if (!_hasCustomOverlayPosition)
             {
                 // デフォルトは右下追従（ウィンドウのリサイズや比率変更にも追従）
-                _overlayPosition.x = maxX;
-                _overlayPosition.y = maxY;
+                _overlayPosition = _overlayMaxPosition;
             }
             else
             {
-                _overlayPosition.x = Mathf.Clamp(_overlayPosition.x, margin, maxX);
-                _overlayPosition.y = Mathf.Clamp(_overlayPosition.y, margin, maxY);
+                _overlayPosition = Vector2.Min(
+                    Vector2.Max(_overlayPosition, new Vector2(OverlayMargin, OverlayMargin)),
+                    _overlayMaxPosition);
             }
 
-            _overlayRect = new Rect(_overlayPosition.x, _overlayPosition.y, overlayWidth, overlayHeight);
+            _overlayRect = new Rect(_overlayPosition.x, _overlayPosition.y, OverlayWidth, _overlayHeight);
+        }
+
+        /// <summary>
+        /// パネルを描く。<see cref="OnSceneGui"/> の最後に呼ぶこと。
+        /// IMGUI は呼んだ順に描くので、ラティス・ハンドル・矩形選択より後に描かないと
+        /// それらがパネルを突き抜けて見える。
+        /// </summary>
+        /// <param name="blockControl">パネルの下でハンドルを反応させないためのコントロール ID。</param>
+        private void DrawOverlay(int blockControl)
+        {
+            var current = Event.current;
+
+            // HandleUtility.nearestControl は Layout イベントで決まり、距離が同じなら
+            // 後から登録した方が勝つ。ここは全ハンドルより後なので、距離 0 で登録すれば
+            // パネルの上にカーソルがある間はハンドルが掴まれない
+            if (current.type == EventType.Layout && _overlayRect.Contains(current.mousePosition))
+            {
+                HandleUtility.AddControl(blockControl, 0f);
+            }
+
             var headerRect = new Rect(_overlayRect.x, _overlayRect.y, _overlayRect.width, 24f);
 
             // ヘッダーのドラッグ移動
@@ -68,9 +103,10 @@ namespace Dennokoworks.DenLattice.Editor
             }
             else if (current.type == EventType.MouseDrag && _overlayDragging)
             {
-                _overlayPosition = current.mousePosition - _overlayDragOffset;
-                _overlayPosition.x = Mathf.Clamp(_overlayPosition.x, margin, maxX);
-                _overlayPosition.y = Mathf.Clamp(_overlayPosition.y, margin, maxY);
+                _overlayPosition = Vector2.Min(
+                    Vector2.Max(current.mousePosition - _overlayDragOffset,
+                        new Vector2(OverlayMargin, OverlayMargin)),
+                    _overlayMaxPosition);
                 current.Use();
                 GUI.changed = true;
             }
@@ -82,7 +118,8 @@ namespace Dennokoworks.DenLattice.Editor
 
             Handles.BeginGUI();
 
-            EditorGUI.DrawRect(_overlayRect, new Color(0.16f, 0.16f, 0.16f, 0.94f));
+            // 背景はほぼ不透明にする。ラティス線やハンドルが透けると文字が読めない
+            EditorGUI.DrawRect(_overlayRect, new Color(0.16f, 0.16f, 0.16f, 0.98f));
             DrawOutlineRect(_overlayRect, new Color(0.25f, 0.88f, 0.45f, 0.95f), 2f);
 
             EditorGUIUtility.AddCursorRect(headerRect, MouseCursor.MoveArrow);
@@ -107,8 +144,7 @@ namespace Dennokoworks.DenLattice.Editor
             GUILayout.Space(8);
             EditorGUILayout.BeginVertical();
 
-            DrawResolutionRow();
-            DrawInterpolationRow();
+            DrawResolutionSection();
             GUILayout.Space(3);
             DrawMirrorSection();
             GUILayout.Space(3);
@@ -128,6 +164,13 @@ namespace Dennokoworks.DenLattice.Editor
 
             EditorGUIUtility.labelWidth = previousLabelWidth;
 
+            // 高さは中身から測る。行数を数えて定数で持つと、言語やスキンで文字の高さが
+            // 変わったときに下端が切れる（BeginArea は範囲外をクリップする）
+            if (current.type == EventType.Repaint)
+            {
+                _overlayHeight = Mathf.Max(60f, GUILayoutUtility.GetLastRect().yMax + OverlayBottomPadding);
+            }
+
             GUILayout.EndArea();
             Handles.EndGUI();
 
@@ -138,46 +181,14 @@ namespace Dennokoworks.DenLattice.Editor
         /// 格子数。<b>ここを変えても形状は変わらない</b>のが本ツールの中核で、
         /// だからこそ編集を中断せずに触れる位置へ置いている。
         /// </summary>
-        private void DrawResolutionRow()
+        private void DrawResolutionSection()
         {
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label(DenLatticeLocalization.Tr("overlay.resolution"), GUILayout.Width(84));
+            GUILayout.Label(DenLatticeLocalization.Tr("overlay.resolution"), EditorStyles.miniLabel);
 
-            EditorGUI.BeginChangeCheck();
-            // Delayed 版を使う。素の IntField は 1 文字打つたびに変更を出すので、
-            // 「10」と入れようとすると途中の「1」でクランプされて打ち直しになる
-            var u = EditorGUILayout.DelayedIntField(_component.ResU);
-            var v = EditorGUILayout.DelayedIntField(_component.ResV);
-            var w = EditorGUILayout.DelayedIntField(_component.ResW);
-            if (EditorGUI.EndChangeCheck())
-            {
-                ChangeResolution(u, v, w);
-            }
+            var current = new Vector3Int(_component.ResU, _component.ResV, _component.ResW);
+            var next = LatticeResolutionField.Draw(current);
 
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawInterpolationRow()
-        {
-            EditorGUI.BeginChangeCheck();
-            var interpolation = (InterpolationType)EditorGUILayout.EnumPopup(
-                DenLatticeLocalization.Tr("overlay.interpolation"), _component.interpolation);
-            var freeze = EditorGUILayout.Toggle(
-                DenLatticeLocalization.Tr("overlay.freeze_border"), _component.freezeBorder);
-
-            if (!EditorGUI.EndChangeCheck()) return;
-
-            RecordSettingsChange();
-            _component.interpolation = interpolation;
-            _component.freezeBorder = freeze;
-            EditorUtility.SetDirty(_component);
-
-            // 境界固定は「動かせる制御点」の集合を変える。選択が固定点を含んだままだと
-            // 掴めない点が選択されて見えるので、選び直させる
-            if (freeze) PruneFrozenSelection();
-
-            RecomputeCenter();
-            BuildInfluences();
+            if (next != current) ChangeResolution(next.x, next.y, next.z);
         }
 
         private void DrawMirrorSection()
@@ -272,20 +283,6 @@ namespace Dennokoworks.DenLattice.Editor
                 GUI.backgroundColor = previousColor;
                 EditorGUILayout.EndHorizontal();
             }
-
-            EditorGUILayout.BeginHorizontal();
-
-            if (GUILayout.Button(DenLatticeLocalization.Tr("overlay.fit_box"), GUILayout.Height(20)))
-            {
-                AutoFitBox();
-            }
-
-            if (GUILayout.Button(DenLatticeLocalization.Tr("overlay.center_box"), GUILayout.Height(20)))
-            {
-                CenterBoxOnMirrorPlane();
-            }
-
-            EditorGUILayout.EndHorizontal();
 
             using (new EditorGUI.DisabledScope(!_component.HasControlOffsets))
             {

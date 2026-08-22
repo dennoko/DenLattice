@@ -166,6 +166,10 @@ namespace Dennokoworks.DenLattice.Editor
                 _active.SyncOffsetsFromComponent();
             }
 
+            // 境界固定は「動かせる制御点」の集合を変える。固定された点が選択に残ると
+            // 掴めない点が選択されて見えるので、選び直させる
+            if (_active._component.freezeBorder) _active.PruneFrozenSelection();
+
             _active.RecomputeCenter();
             _active.BuildInfluences();
 
@@ -412,11 +416,15 @@ namespace Dennokoworks.DenLattice.Editor
             var defaultControl = GUIUtility.GetControlID(FocusType.Passive);
             HandleUtility.AddDefaultControl(defaultControl);
 
-            DrawOverlay(sceneView);
+            // パネルは最後に描く（＝ラティスやハンドルの上に重ねる）が、当たり判定は
+            // ハンドル処理より先に必要なので、矩形の計算だけ先に済ませておく
+            UpdateOverlayLayout(sceneView);
+
             HandleBoxTransform(current);
             HandleSelection(current, defaultControl);
             HandleDrag(current);
             DrawGizmos();
+            DrawOverlay(defaultControl);
 
             // Layout イベントで Repaint を呼ぶと無限再描画になるため、ここではホバー追従が
             // 必要なマウス移動時だけにする。定期更新は OnEditorUpdate が担当する。

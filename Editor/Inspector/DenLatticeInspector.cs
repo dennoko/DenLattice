@@ -356,24 +356,26 @@ namespace Dennokoworks.DenLattice.Editor
             EditorGUILayout.LabelField(DenLatticeLocalization.Tr("inspector.lattice_header"), EditorStyles.boldLabel);
 
             // 格子数は private フィールドなので SerializedProperty では書かない。
-            // 変更には旧い変位場のリサンプルが伴うため、必ず LatticeResampler を通す
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel(DenLatticeLocalization.Tr("inspector.resolution"));
+            // 変更には制御点の作り直しが伴うため、必ず LatticeResampler を通す。
+            // ラベルの行を分けるのは、PrefixLabel と同じ行に置くと Inspector を狭めたときに
+            // 3 軸分（270px）が入りきらず ± ボタンが潰れるため
+            EditorGUILayout.LabelField(DenLatticeLocalization.Tr("inspector.resolution"));
 
-            EditorGUI.BeginChangeCheck();
-            var u = EditorGUILayout.DelayedIntField(component.ResU);
-            var v = EditorGUILayout.DelayedIntField(component.ResV);
-            var w = EditorGUILayout.DelayedIntField(component.ResW);
-            var resolutionChanged = EditorGUI.EndChangeCheck();
+            var resolution = new Vector3Int(component.ResU, component.ResV, component.ResW);
+            var nextResolution = LatticeResolutionField.Draw(resolution);
 
-            EditorGUILayout.EndHorizontal();
-
-            if (resolutionChanged)
+            if (nextResolution != resolution)
             {
                 serializedObject.ApplyModifiedProperties();
 
-                if (EditSession.IsActive(component)) EditSession.Active.ChangeResolution(u, v, w);
-                else LatticeResampler.ChangeResolution(component, u, v, w);
+                if (EditSession.IsActive(component))
+                {
+                    EditSession.Active.ChangeResolution(nextResolution.x, nextResolution.y, nextResolution.z);
+                }
+                else
+                {
+                    LatticeResampler.ChangeResolution(component, nextResolution.x, nextResolution.y, nextResolution.z);
+                }
 
                 serializedObject.Update();
             }
@@ -392,6 +394,8 @@ namespace Dennokoworks.DenLattice.Editor
             EditorGUILayout.LabelField(DenLatticeLocalization.Tr("inspector.box_header"), EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(DenLatticeLocalization.Tr("inspector.box_help"), MessageType.None);
 
+            DrawBoxPlacementButtons(component);
+
             using (new EditorGUI.DisabledScope(!component.HasControlOffsets))
             {
                 if (GUILayout.Button(DenLatticeLocalization.Tr("inspector.btn_reset_cage")))
@@ -404,6 +408,37 @@ namespace Dennokoworks.DenLattice.Editor
                     serializedObject.Update();
                 }
             }
+        }
+
+        /// <summary>
+        /// ボックスの自動配置。どちらも「対象の頂点がいまどこにあるか」を必要とするため、
+        /// 編集セッション（＝NDMF プロキシ）が生きている間だけ押せる。
+        /// </summary>
+        private void DrawBoxPlacementButtons(DenLattice component)
+        {
+            var session = EditSession.IsActive(component) ? EditSession.Active : null;
+
+            var fit = false;
+            var center = false;
+
+            using (new EditorGUI.DisabledScope(session == null))
+            {
+                EditorGUILayout.BeginHorizontal();
+                fit = GUILayout.Button(DenLatticeLocalization.Tr("inspector.fit_box"));
+                center = GUILayout.Button(DenLatticeLocalization.Tr("inspector.center_box"));
+                EditorGUILayout.EndHorizontal();
+            }
+
+            if (session == null || (!fit && !center)) return;
+
+            // セッションはコンポーネントを直接書き換えるので、SerializedObject の
+            // 読み書きの間に挟まないよう前後で同期する
+            serializedObject.ApplyModifiedProperties();
+
+            if (fit) session.AutoFitBox();
+            else session.CenterBoxOnMirrorPlane();
+
+            serializedObject.Update();
         }
 
         // ------------------------------------------------------------------
