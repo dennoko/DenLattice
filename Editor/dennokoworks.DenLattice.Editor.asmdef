@@ -1,0 +1,20 @@
+{
+    "name": "dennokoworks.DenLattice.Editor",
+    "rootNamespace": "Dennokoworks.DenLattice.Editor",
+    "references": [
+        "dennokoworks.DenLattice.Runtime",
+        "nadena.dev.ndmf",
+        "nadena.dev.ndmf.runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

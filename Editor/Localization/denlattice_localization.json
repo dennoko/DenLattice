@@ -1,0 +1,304 @@
+{
+  "entries": [
+    {
+      "key": "version.update_available",
+      "ja": "更新あり {0} ↗",
+      "en": "Update available {0} ↗"
+    },
+    {
+      "key": "version.update_tooltip",
+      "ja": "クリックでダウンロードページを開きます",
+      "en": "Click to open download page"
+    },
+    {
+      "key": "version.error",
+      "ja": "最新版を取得できません",
+      "en": "Failed to check update"
+    },
+    {
+      "key": "version.error_tooltip",
+      "ja": "↻ ボタンで再確認できます",
+      "en": "Click ↻ to recheck"
+    },
+    {
+      "key": "version.checking",
+      "ja": "確認中...",
+      "en": "Checking..."
+    },
+    {
+      "key": "version.recheck_tooltip",
+      "ja": "アップデートを再確認",
+      "en": "Recheck update"
+    },
+    {
+      "key": "inspector.targets_header",
+      "ja": "変形対象",
+      "en": "Targets"
+    },
+    {
+      "key": "inspector.vertex_count",
+      "ja": "{0} 頂点",
+      "en": "{0} verts"
+    },
+    {
+      "key": "inspector.add_target",
+      "ja": "対象を追加",
+      "en": "Add Target"
+    },
+    {
+      "key": "inspector.add_target_prompt",
+      "ja": "変形対象の Renderer を追加してください。",
+      "en": "Please add a target Renderer."
+    },
+    {
+      "key": "inspector.warn_no_mesh",
+      "ja": "この Renderer にメッシュが設定されていません。",
+      "en": "No mesh is assigned to this Renderer."
+    },
+    {
+      "key": "inspector.warn_vertex_count_mismatch",
+      "ja": "頂点数が変形時と異なります（現在 {0} / 変形時 {1}）。変形は適用されません。元メッシュが差し替わったか、再インポートで頂点順が変化した可能性があります。",
+      "en": "Vertex count differs from when deformed (Current: {0} / Deformed: {1}). The deformation will not be applied. The original mesh may have been replaced or re-imported."
+    },
+    {
+      "key": "inspector.btn_edit_start",
+      "ja": "編集",
+      "en": "Edit"
+    },
+    {
+      "key": "inspector.btn_edit_end",
+      "ja": "編集終了",
+      "en": "Finish Editing"
+    },
+    {
+      "key": "inspector.edit_help",
+      "ja": "シーンビューで制御点をクリックして選択し、移動ハンドルでドラッグします。\nドラッグで矩形選択、Shift / Ctrl で追加選択。\nEsc で選択解除、もう一度 Esc で編集終了。",
+      "en": "Click a control point in the Scene View and drag the move handle.\nDrag on empty space for rectangle selection; Shift / Ctrl to add.\nEsc clears the selection, Esc again exits editing."
+    },
+    {
+      "key": "inspector.warn_ndmf_fallback",
+      "ja": "NDMF プレビューからプロキシを取得できていません。他ツールの改変が反映されていない形状を編集しています。NDMF プレビューが有効か確認してください。",
+      "en": "Could not get a proxy from the NDMF preview. You are editing a shape without other tools' modifications applied. Please make sure the NDMF preview is enabled."
+    },
+    {
+      "key": "inspector.warn_ndmf_vertex_mismatch",
+      "ja": "下流の NDMF ツールが頂点数を変更しているため、プロキシを使用できません。他ツールの影響を反映した変形はできません。",
+      "en": "A downstream NDMF tool changes the vertex count, so the proxy cannot be used. Deformation reflecting other tools is unavailable."
+    },
+    {
+      "key": "inspector.lattice_header",
+      "ja": "ラティス",
+      "en": "Lattice"
+    },
+    {
+      "key": "inspector.resolution",
+      "ja": "格子数 (U/V/W)",
+      "en": "Resolution (U/V/W)"
+    },
+    {
+      "key": "inspector.resolution_help",
+      "ja": "格子数を変えても、今できている形は崩れません。変形は頂点ごとの移動量として保持されているためです。",
+      "en": "Changing the resolution never alters the current shape: the deformation is stored as per-vertex offsets."
+    },
+    {
+      "key": "inspector.interpolation",
+      "ja": "補間方式",
+      "en": "Interpolation"
+    },
+    {
+      "key": "inspector.interpolation_tooltip",
+      "ja": "三線形は制御点の周りだけが動きます。B-Spline は最も滑らかですが制御点を通りません。Catmull-Rom はその中間です。",
+      "en": "Trilinear moves only the neighborhood of a control point. B-Spline is the smoothest but does not pass through control points. Catmull-Rom sits in between."
+    },
+    {
+      "key": "inspector.freeze_border",
+      "ja": "境界の制御点を固定",
+      "en": "Freeze Border"
+    },
+    {
+      "key": "inspector.freeze_border_tooltip",
+      "ja": "最外殻の制御点を動かせなくします。三線形では境界の段差が完全に無くなります（B-Spline / Catmull-Rom では小さくなりますが完全には消えません）。",
+      "en": "Locks the outermost shell of control points. With Trilinear this removes the seam at the box boundary entirely; with the cubic bases it only reduces it."
+    },
+    {
+      "key": "inspector.box_header",
+      "ja": "ラティスボックス",
+      "en": "Lattice Box"
+    },
+    {
+      "key": "inspector.box_help",
+      "ja": "ボックスの位置・回転・サイズはシーンビューで操作します。ボックスを動かすと制御点は格子位置へ戻りますが、メッシュの形状は変わりません。",
+      "en": "Move, rotate and scale the box in the Scene View. Moving the box resets the control points to the grid, but the mesh shape is unchanged."
+    },
+    {
+      "key": "inspector.btn_reset_cage",
+      "ja": "制御点をリセット",
+      "en": "Reset Cage"
+    },
+    {
+      "key": "inspector.mirror_on",
+      "ja": "ミラー: ON",
+      "en": "Mirror: ON"
+    },
+    {
+      "key": "inspector.mirror_off",
+      "ja": "ミラー: OFF",
+      "en": "Mirror: OFF"
+    },
+    {
+      "key": "inspector.mirror_axis",
+      "ja": "対称軸",
+      "en": "Mirror Axis"
+    },
+    {
+      "key": "inspector.mirror_help",
+      "ja": "ラティスボックスのローカル軸で対称にします。左右対称の変形をするには、ボックスをアバターの中心へ合わせてください（編集中のオーバーレイに「中心へ」ボタンがあります）。",
+      "en": "Symmetry is applied along the box's local axis. For left-right symmetry, align the box with the avatar center (see the \"Center\" button in the editing overlay)."
+    },
+    {
+      "key": "inspector.bake_header",
+      "ja": "ベイク",
+      "en": "Bake"
+    },
+    {
+      "key": "inspector.bake_as_blendshape",
+      "ja": "シェイプキーとして追加",
+      "en": "Add as BlendShape"
+    },
+    {
+      "key": "inspector.bake_as_blendshape_tooltip",
+      "ja": "ON にすると、元の形状を保ったまま変形分を新規シェイプキーとして追加します。",
+      "en": "When enabled, keeps the original shape and adds the deformation as a new blend shape."
+    },
+    {
+      "key": "inspector.blendshape_name",
+      "ja": "シェイプキー名",
+      "en": "BlendShape Name"
+    },
+    {
+      "key": "inspector.blendshape_name_tooltip",
+      "ja": "空の場合は元メッシュ名 + _lattice になります。",
+      "en": "Defaults to the source mesh name + _lattice when left empty."
+    },
+    {
+      "key": "inspector.bake_help",
+      "ja": "元メッシュと同じフォルダに、変形を適用したメッシュを書き出します。シーン内の Renderer は差し替えません（通常のアップロードではベイクは不要です）。",
+      "en": "Writes a deformed mesh asset next to the source mesh. The Renderer in the scene is not replaced (baking is not required for a normal upload)."
+    },
+    {
+      "key": "inspector.btn_bake",
+      "ja": "ベイク",
+      "en": "Bake"
+    },
+    {
+      "key": "inspector.btn_clear_all",
+      "ja": "変形をすべて消去",
+      "en": "Clear All Deformation"
+    },
+    {
+      "key": "inspector.dialog_clear_title",
+      "ja": "変形の消去",
+      "en": "Clear Deformation"
+    },
+    {
+      "key": "inspector.dialog_clear_message",
+      "ja": "すべての変形データと制御点をリセットします。よろしいですか？",
+      "en": "This resets all deformation data and control points. Continue?"
+    },
+    {
+      "key": "inspector.dialog_clear_ok",
+      "ja": "消去する",
+      "en": "Clear"
+    },
+    {
+      "key": "inspector.dialog_clear_cancel",
+      "ja": "キャンセル",
+      "en": "Cancel"
+    },
+    {
+      "key": "overlay.title",
+      "ja": "Dennoko Lattice",
+      "en": "Dennoko Lattice"
+    },
+    {
+      "key": "overlay.resolution",
+      "ja": "格子数",
+      "en": "Resolution"
+    },
+    {
+      "key": "overlay.interpolation",
+      "ja": "補間方式",
+      "en": "Interpolation"
+    },
+    {
+      "key": "overlay.freeze_border",
+      "ja": "境界を固定",
+      "en": "Freeze Border"
+    },
+    {
+      "key": "overlay.mirror_on",
+      "ja": "ミラー: ON",
+      "en": "Mirror: ON"
+    },
+    {
+      "key": "overlay.mirror_off",
+      "ja": "ミラー: OFF",
+      "en": "Mirror: OFF"
+    },
+    {
+      "key": "overlay.box_mode_on",
+      "ja": "ボックス操作中（クリックで戻る）",
+      "en": "Editing Box (click to exit)"
+    },
+    {
+      "key": "overlay.box_mode_off",
+      "ja": "ボックスを操作",
+      "en": "Edit Box"
+    },
+    {
+      "key": "overlay.box_move",
+      "ja": "移動",
+      "en": "Move"
+    },
+    {
+      "key": "overlay.box_rotate",
+      "ja": "回転",
+      "en": "Rotate"
+    },
+    {
+      "key": "overlay.box_scale",
+      "ja": "拡縮",
+      "en": "Scale"
+    },
+    {
+      "key": "overlay.fit_box",
+      "ja": "対象に合わせる",
+      "en": "Fit to Targets"
+    },
+    {
+      "key": "overlay.center_box",
+      "ja": "中心へ",
+      "en": "Center"
+    },
+    {
+      "key": "overlay.reset_cage",
+      "ja": "制御点をリセット",
+      "en": "Reset Cage"
+    },
+    {
+      "key": "overlay.hint_select",
+      "ja": "ドラッグで矩形選択 / Shift で追加選択",
+      "en": "Drag to box-select / Shift to add"
+    },
+    {
+      "key": "overlay.hint_esc",
+      "ja": "Esc: 選択解除 → もう一度で編集終了",
+      "en": "Esc: clear selection, again to exit"
+    },
+    {
+      "key": "overlay.warn_ndmf_fallback",
+      "ja": "NDMF プレビューからプロキシを取得できていません。他ツールの改変が反映されていない形状を編集しています。",
+      "en": "Could not get a proxy from the NDMF preview. You are editing a shape without other tools' modifications applied."
+    }
+  ]
+}

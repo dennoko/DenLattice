@@ -1,0 +1,22 @@
+{
+    "name": "dennokoworks.DenLattice.Runtime",
+    "rootNamespace": "Dennokoworks.DenLattice",
+    "references": [
+        "VRC.SDKBase"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.vrchat.base",
+            "expression": "",
+            "define": "DEN_LATTICE_VRCSDK"
+        }
+    ],
+    "noEngineReferences": false
+}
