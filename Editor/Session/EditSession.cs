@@ -55,8 +55,6 @@ namespace Dennokoworks.DenLattice.Editor
 
         internal static EditSession Active => _active;
 
-        internal DenLattice Component => _component;
-
         internal static bool IsActive(DenLattice component)
         {
             return _active != null && _active._component == component;
@@ -95,6 +93,9 @@ namespace Dennokoworks.DenLattice.Editor
         {
             if (_active == null) return;
 
+            // 実処理は次のエディタ更新でまとめて行う（→ ResyncFromComponent）。
+            // Ctrl+Z を押しっぱなしにすると同一フレームに複数回届くため、
+            // ここで直接処理すると巻き戻し 1 回ごとに作業状態の作り直しが積まれる。
             _active._resyncPending = true;
         }
 
@@ -324,8 +325,17 @@ namespace Dennokoworks.DenLattice.Editor
                 ClearSelection();
             }
 
-            // ボックスが巻き戻った可能性があるので、ボックス内判定は取り直す
-            _paramsValid = false;
+            // ボックス内判定はここでは作り直さない。
+            //
+            // パラメータ化の基準はレスト位置（ワールド位置 − 自分の変形）なので、
+            // 頂点デルタが巻き戻っても値は変わらない。むしろここでは Refresh が
+            // 巻き戻し前の頂点位置を保っている（allowCachedVertices）一方でデルタだけが
+            // 巻き戻っているため、作り直すと食い違った組み合わせでパラメータができてしまう。
+            //
+            // ボックス自体が巻き戻ったときだけは作り直す。その場合は制御点オフセットも
+            // ゼロに戻っているので（→ ApplyBoxTransform）、頂点位置が追いついた時点で
+            // Refresh の moved 判定が改めて取り直す。
+            if (BoxChangedSinceParams()) _paramsValid = false;
 
             SyncOffsetsFromComponent();
             RecomputeCenter();

@@ -12,6 +12,11 @@ namespace Dennokoworks.DenLattice.Editor
         /// <summary>ボックス内判定とパラメータが現在の形状・ボックスと整合しているか。</summary>
         private bool _paramsValid;
 
+        // パラメータ化を作ったときのボックス。ここが変わらない限り作り直す必要はない
+        private Vector3 _paramsBoxPosition;
+        private Quaternion _paramsBoxRotation = Quaternion.identity;
+        private Vector3 _paramsBoxSize;
+
         /// <summary>前回の Refresh 時点でプロキシを取得できていなかったか。</summary>
         private bool _lastAnyFallback;
 
@@ -235,6 +240,10 @@ namespace Dennokoworks.DenLattice.Editor
                 Mathf.Abs(size.y) < 1e-6f ? 0f : 1f / size.y,
                 Mathf.Abs(size.z) < 1e-6f ? 0f : 1f / size.z);
 
+            _paramsBoxPosition = _boxDragging ? _pendingBoxPosition : _component.boxPosition;
+            _paramsBoxRotation = _boxDragging ? _pendingBoxRotation : _component.boxRotation;
+            _paramsBoxSize = size;
+
             foreach (var target in _targets)
             {
                 UpdateBoneMatrices(target);
@@ -268,6 +277,14 @@ namespace Dennokoworks.DenLattice.Editor
                     target.InBoxParams.Add(new Vector3(u, v, w));
                 }
             }
+        }
+
+        /// <summary>パラメータ化を作ったときからボックスが変わっているか。</summary>
+        private bool BoxChangedSinceParams()
+        {
+            return _paramsBoxPosition != _component.boxPosition
+                   || _paramsBoxRotation != _component.boxRotation
+                   || _paramsBoxSize != _component.boxSize;
         }
 
         // ------------------------------------------------------------------
@@ -622,14 +639,27 @@ namespace Dennokoworks.DenLattice.Editor
         /// </summary>
         private void ApplyBoxTransform(Vector3 position, Quaternion rotation, Vector3 size, string undoName)
         {
+            var clamped = new Vector3(
+                Mathf.Max(1e-4f, Mathf.Abs(size.x)),
+                Mathf.Max(1e-4f, Mathf.Abs(size.y)),
+                Mathf.Max(1e-4f, Mathf.Abs(size.z)));
+
+            // RegisterCompleteObjectUndo は変更が無くても 1 段積む（RecordObject の差分方式と違う）。
+            // 「対象に合わせる」を続けて押したときに空の段が残り、Ctrl+Z が空振りするのを防ぐ
+            if (_component.boxInitialized
+                && _component.boxPosition == position
+                && _component.boxRotation == rotation
+                && _component.boxSize == clamped
+                && !_component.HasControlOffsets)
+            {
+                return;
+            }
+
             BeginUndoGroup(undoName);
 
             _component.boxPosition = position;
             _component.boxRotation = rotation;
-            _component.boxSize = new Vector3(
-                Mathf.Max(1e-4f, Mathf.Abs(size.x)),
-                Mathf.Max(1e-4f, Mathf.Abs(size.y)),
-                Mathf.Max(1e-4f, Mathf.Abs(size.z)));
+            _component.boxSize = clamped;
             _component.boxInitialized = true;
             _component.ClearControlOffsets();
 

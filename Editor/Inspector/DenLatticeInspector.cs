@@ -43,9 +43,11 @@ namespace Dennokoworks.DenLattice.Editor
 
             if (component.edits.Count == 0)
             {
-                Undo.RecordObject(component, "Add Target to DenLattice");
+                // グループは切らない。直前の AddComponent と同じ 1 段に入れて、
+                // Ctrl+Z 一回で「追加する前」へ戻れるようにする
+                DenLatticeUndo.Record(component, "Add Target to DenLattice");
                 component.edits.Add(new MeshEdit { target = renderer });
-                EditorUtility.SetDirty(component);
+                DenLatticeUndo.Apply(component);
             }
 
             if (MeshDeltaApplier.GetSharedMesh(renderer) != null)

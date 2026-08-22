@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Dennokoworks.DenLattice.Editor
@@ -65,10 +66,16 @@ namespace Dennokoworks.DenLattice.Editor
 
             EditorUtility.SetDirty(target);
 
-            if (PrefabUtility.IsPartOfPrefabInstance(target))
-            {
-                PrefabUtility.RecordPrefabInstancePropertyModifications(target);
-            }
+            if (!PrefabUtility.IsPartOfPrefabInstance(target)) return;
+
+            // 後から足したコンポーネントは「追加コンポーネントのオーバーライド」として
+            // シリアライズ内容がまるごとシーンへ保存されるため、プロパティ単位の記録が要らない。
+            // RecordPrefabInstancePropertyModifications は Prefab アセットとの全プロパティ照合で、
+            // 変形データの量に比例して重くなる（数十万頂点で「Hold on」が出る）ので、
+            // 必要な構成でだけ通す
+            if (target is Component component && PrefabUtility.IsAddedComponentOverride(component)) return;
+
+            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
         }
 
         /// <summary>次の操作が同じ段へ入らないようにグループを閉じる。</summary>
