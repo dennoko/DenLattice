@@ -18,14 +18,17 @@ namespace Dennokoworks.DenLattice.Editor
         private static readonly Vector3[] PointScratch = new Vector3[CircleSegments];
 
         /// <summary>制御点マーカーの大きさ。ハンドルサイズに対する倍率。</summary>
-        private const float ControlDotScale = 0.035f;
+        private const float ControlDotScale = 0.07f;
 
-        private static readonly Color BoxColor = new Color(0.35f, 0.8f, 1f, 0.9f);
-        private static readonly Color CageColor = new Color(0.45f, 0.75f, 0.95f, 0.35f);
-        private static readonly Color ControlColor = new Color(0.85f, 0.9f, 0.95f, 0.9f);
+        /// <summary>格子線・枠線の太さ。</summary>
+        private const float LineWidth = 2.0f;
+
+        private static readonly Color BoxColor = new Color(0.35f, 0.8f, 1f, 0.95f);
+        private static readonly Color CageColor = new Color(0.45f, 0.75f, 0.95f, 0.55f);
+        private static readonly Color ControlColor = new Color(0.85f, 0.9f, 0.95f, 0.95f);
         private static readonly Color SelectedColor = new Color(1f, 0.45f, 0.2f, 1f);
         private static readonly Color HoverColor = new Color(1f, 0.85f, 0.25f, 1f);
-        private static readonly Color FrozenColor = new Color(0.45f, 0.45f, 0.5f, 0.5f);
+        private static readonly Color FrozenColor = new Color(0.45f, 0.45f, 0.5f, 0.6f);
 
         private readonly List<Vector3> _cageBuffer = new List<Vector3>();
         private readonly List<Vector3> _controlBuffer = new List<Vector3>();
@@ -66,7 +69,29 @@ namespace Dennokoworks.DenLattice.Editor
 
             Handles.matrix = BoxToWorld;
             Handles.color = _boxMode ? new Color(1f, 0.75f, 0.3f, 1f) : BoxColor;
-            Handles.DrawWireCube(Vector3.zero, _component.boxSize);
+
+            var s = _component.boxSize * 0.5f;
+            var c0 = new Vector3(-s.x, -s.y, -s.z);
+            var c1 = new Vector3(s.x, -s.y, -s.z);
+            var c2 = new Vector3(s.x, s.y, -s.z);
+            var c3 = new Vector3(-s.x, s.y, -s.z);
+            var c4 = new Vector3(-s.x, -s.y, s.z);
+            var c5 = new Vector3(s.x, -s.y, s.z);
+            var c6 = new Vector3(s.x, s.y, s.z);
+            var c7 = new Vector3(-s.x, s.y, s.z);
+
+            Handles.DrawLine(c0, c1, LineWidth);
+            Handles.DrawLine(c1, c2, LineWidth);
+            Handles.DrawLine(c2, c3, LineWidth);
+            Handles.DrawLine(c3, c0, LineWidth);
+            Handles.DrawLine(c4, c5, LineWidth);
+            Handles.DrawLine(c5, c6, LineWidth);
+            Handles.DrawLine(c6, c7, LineWidth);
+            Handles.DrawLine(c7, c4, LineWidth);
+            Handles.DrawLine(c0, c4, LineWidth);
+            Handles.DrawLine(c1, c5, LineWidth);
+            Handles.DrawLine(c2, c6, LineWidth);
+            Handles.DrawLine(c3, c7, LineWidth);
 
             Handles.matrix = previousMatrix;
             Handles.color = previousColor;
@@ -119,9 +144,11 @@ namespace Dennokoworks.DenLattice.Editor
             var previousColor = Handles.color;
             Handles.color = CageColor;
 
-            // 点ごとに 1 描画になる DotHandleCap と違い、DrawLines は配列をまとめて描く。
-            // 制御点は最大 1000 点＝格子線 2700 本になりうるので、必ずまとめて渡す
-            Handles.DrawLines(lines.ToArray());
+            var count = lines.Count;
+            for (var i = 0; i < count; i += 2)
+            {
+                Handles.DrawLine(lines[i], lines[i + 1], LineWidth);
+            }
 
             Handles.color = previousColor;
         }
@@ -185,7 +212,11 @@ namespace Dennokoworks.DenLattice.Editor
             if (buffer.Count == 0) return;
 
             Handles.color = color;
-            Handles.DrawLines(buffer.ToArray());
+            var count = buffer.Count;
+            for (var i = 0; i < count; i += 2)
+            {
+                Handles.DrawLine(buffer[i], buffer[i + 1], LineWidth);
+            }
         }
 
         private static void AddCircle(List<Vector3> buffer, Vector3 center, Vector3 right, Vector3 up, float radius)

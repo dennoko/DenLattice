@@ -23,7 +23,7 @@ namespace Dennokoworks.DenLattice.Editor
     internal partial class EditSession
     {
         /// <summary>制御点のクリック判定半径（ピクセル）。</summary>
-        private const float PickThresholdPixels = 14f;
+        private const float PickThresholdPixels = 20f;
 
         private const float RefreshIntervalSeconds = 0.1f;
 
