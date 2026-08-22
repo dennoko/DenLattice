@@ -723,32 +723,18 @@ namespace Dennokoworks.DenLattice.Editor
 
         /// <summary>
         /// コンポーネントを書き換える前後で Undo グループを切る。
-        ///
-        /// Unity は同じグループ内の <c>RecordObject</c> を 1 段にまとめるため、
-        /// 明示的に切らないと無関係な操作どうしが 1 段に潰れて一気に巻き戻る。
+        /// RecordObject ではなく RegisterCompleteObjectUndo を使うことで、
+        /// Prefab インスタンス上での膨大な PropertyModification 比較・照合（Hold on ポップアップのフリーズ）を防ぐ。
         /// </summary>
         private void BeginUndoGroup(string name)
         {
-            Undo.IncrementCurrentGroup();
-            Undo.SetCurrentGroupName(name);
-            Undo.RecordObject(_component, name);
+            DenLatticeUndo.BeginGroup(_component, name);
         }
 
         private void EndUndoGroup()
         {
-            EditorUtility.SetDirty(_component);
-
-            // SerializedObject を経由せずフィールドを直接書き換えているため、
-            // Prefab インスタンス上ではオーバーライドとして記録されるよう明示しておく
-            if (PrefabUtility.IsPartOfPrefabInstance(_component))
-            {
-                PrefabUtility.RecordPrefabInstancePropertyModifications(_component);
-            }
-
-            // RecordObject の差分は通常 MouseUp の直後に自動で確定するが、その MouseUp は
-            // Handles が既に消費していることがある。自動フラッシュに頼らず、この場で確定させる
-            Undo.FlushUndoRecordObjects();
-            Undo.IncrementCurrentGroup();
+            DenLatticeUndo.Apply(_component);
+            DenLatticeUndo.EndGroup();
         }
     }
 }

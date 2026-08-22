@@ -55,6 +55,8 @@ namespace Dennokoworks.DenLattice.Editor
 
         internal static EditSession Active => _active;
 
+        internal DenLattice Component => _component;
+
         internal static bool IsActive(DenLattice component)
         {
             return _active != null && _active._component == component;
@@ -93,12 +95,6 @@ namespace Dennokoworks.DenLattice.Editor
         {
             if (_active == null) return;
 
-            // 未確定データの破棄もプレビューへの通知も、作業状態の作り直しと一緒に
-            // 次のエディタ更新へ回す（実処理は ResyncFromComponent）。
-            //
-            // Ctrl+Z を押しっぱなしにすると同一フレームに複数回届く。ここで直接
-            // ClearLiveEdits を呼ぶと、そのたびに LiveEdits.Invalidate が走り、
-            // 下流上書き構成では 50ms ごとのパイプライン再構築が undo の回数だけ積まれる。
             _active._resyncPending = true;
         }
 

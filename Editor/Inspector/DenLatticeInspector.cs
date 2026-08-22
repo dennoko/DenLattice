@@ -262,14 +262,10 @@ namespace Dennokoworks.DenLattice.Editor
                 serializedObject.ApplyModifiedProperties();
 
                 var component = (DenLattice)target;
-                Undo.RecordObject(component, "Add Dennoko Lattice Target");
+                DenLatticeUndo.BeginGroup(component, "Add Dennoko Lattice Target");
                 component.edits.Add(new MeshEdit());
-                EditorUtility.SetDirty(component);
-
-                if (PrefabUtility.IsPartOfPrefabInstance(component))
-                {
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
-                }
+                DenLatticeUndo.Apply(component);
+                DenLatticeUndo.EndGroup();
 
                 serializedObject.Update();
             }
@@ -543,7 +539,7 @@ namespace Dennokoworks.DenLattice.Editor
 
                 EditSession.End();
 
-                Undo.RecordObject(component, "Clear Dennoko Lattice Deformation");
+                DenLatticeUndo.BeginGroup(component, "Clear Dennoko Lattice Deformation");
                 foreach (var edit in component.edits)
                 {
                     edit?.Clear();
@@ -551,11 +547,8 @@ namespace Dennokoworks.DenLattice.Editor
 
                 component.ClearControlOffsets();
 
-                EditorUtility.SetDirty(component);
-                if (PrefabUtility.IsPartOfPrefabInstance(component))
-                {
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
-                }
+                DenLatticeUndo.Apply(component);
+                DenLatticeUndo.EndGroup();
 
                 LiveEdits.Invalidate();
 

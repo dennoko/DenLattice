@@ -317,7 +317,7 @@ namespace Dennokoworks.DenLattice.Editor
                 Undo.SetCurrentGroupName("Dennoko Lattice Settings");
             }
 
-            Undo.RecordObject(_component, "Dennoko Lattice Settings");
+            DenLatticeUndo.Record(_component, "Dennoko Lattice Settings");
         }
 
         private void FlushSettingsUndoGroup()
@@ -325,6 +325,7 @@ namespace Dennokoworks.DenLattice.Editor
             if (_settingsUndoGroup < 0) return;
             if (Event.current == null || Event.current.rawType != EventType.MouseUp) return;
 
+            DenLatticeUndo.Apply(_component);
             Undo.CollapseUndoOperations(_settingsUndoGroup);
             _settingsUndoGroup = -1;
         }

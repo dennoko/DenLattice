@@ -58,26 +58,13 @@ namespace Dennokoworks.DenLattice.Editor
 
         private static void RecordUndo(Object target, string name)
         {
-            // Unity は同じグループ内の RecordObject を 1 段にまとめるため、
-            // 明示的に切らないと無関係な操作どうしが 1 段に潰れる
-            Undo.IncrementCurrentGroup();
-            Undo.SetCurrentGroupName(name);
-            Undo.RecordObject(target, name);
+            DenLatticeUndo.BeginGroup(target, name);
         }
 
         private static void FinishUndo(Object target)
         {
-            EditorUtility.SetDirty(target);
-
-            // SerializedObject を経由せずフィールドを直接書き換えているため、
-            // Prefab インスタンス上でオーバーライドとして記録されるよう明示しておく
-            if (PrefabUtility.IsPartOfPrefabInstance(target))
-            {
-                PrefabUtility.RecordPrefabInstancePropertyModifications(target);
-            }
-
-            Undo.FlushUndoRecordObjects();
-            Undo.IncrementCurrentGroup();
+            DenLatticeUndo.Apply(target);
+            DenLatticeUndo.EndGroup();
         }
     }
 }
