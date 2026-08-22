@@ -29,7 +29,6 @@ namespace Dennokoworks.DenLattice.Editor
 
         // Layout イベント時に固定する、レイアウト構成に影響する状態
         private bool _overlayBoxMode;
-        private bool _overlayMirror;
 
         /// <summary>
         /// パネルの矩形を決める。
@@ -48,7 +47,6 @@ namespace Dennokoworks.DenLattice.Editor
             {
                 _overlayShowsWarning = _showFallbackWarning;
                 _overlayBoxMode = _boxMode;
-                _overlayMirror = _component.mirror;
             }
 
             var canvasWidth = GetCanvasWidth(sceneView);
@@ -193,44 +191,34 @@ namespace Dennokoworks.DenLattice.Editor
 
         private void DrawMirrorSection()
         {
-            var mirrorActive = _component.mirror;
-            var previousColor = GUI.backgroundColor;
-            if (mirrorActive) GUI.backgroundColor = new Color(0.35f, 0.95f, 0.45f);
-
-            var label = mirrorActive
-                ? DenLatticeLocalization.Tr("overlay.mirror_on")
-                : DenLatticeLocalization.Tr("overlay.mirror_off");
-
-            if (GUILayout.Button(label, GUILayout.Height(24)))
-            {
-                RecordSettingsChange();
-                _component.mirror = !mirrorActive;
-                EditorUtility.SetDirty(_component);
-
-                BuildInfluences();
-                SceneView.RepaintAll();
-            }
-
-            GUI.backgroundColor = previousColor;
-
-            if (!_overlayMirror) return;
+            GUILayout.Label(DenLatticeLocalization.Tr("overlay.mirror"), EditorStyles.miniLabel);
 
             EditorGUILayout.BeginHorizontal();
 
             var axes = new[] { LatticeAxis.U, LatticeAxis.V, LatticeAxis.W };
-            var names = new[] { "U (X)", "V (Y)", "W (Z)" };
+            var names = new[] { "X", "Y", "Z" };
+            var previousColor = GUI.backgroundColor;
+            var activeColor = new Color(0.35f, 0.95f, 0.45f);
 
             for (var i = 0; i < axes.Length; i++)
             {
-                var selected = _component.mirrorAxis == axes[i];
-                GUI.backgroundColor = selected ? new Color(0.35f, 0.7f, 1f) : previousColor;
+                var isSelected = _component.mirror && _component.mirrorAxis == axes[i];
+                GUI.backgroundColor = isSelected ? activeColor : previousColor;
 
-                if (GUILayout.Button(names[i], GUILayout.Height(20)) && !selected)
+                if (GUILayout.Button(names[i], GUILayout.Height(22)))
                 {
                     RecordSettingsChange();
-                    _component.mirrorAxis = axes[i];
-                    EditorUtility.SetDirty(_component);
+                    if (isSelected)
+                    {
+                        _component.mirror = false;
+                    }
+                    else
+                    {
+                        _component.mirror = true;
+                        _component.mirrorAxis = axes[i];
+                    }
 
+                    EditorUtility.SetDirty(_component);
                     BuildInfluences();
                     SceneView.RepaintAll();
                 }

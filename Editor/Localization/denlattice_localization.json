@@ -146,24 +146,19 @@
       "en": "Reset Cage"
     },
     {
-      "key": "inspector.mirror_on",
-      "ja": "ミラー: ON",
-      "en": "Mirror: ON"
-    },
-    {
-      "key": "inspector.mirror_off",
-      "ja": "ミラー: OFF",
-      "en": "Mirror: OFF"
+      "key": "inspector.mirror_header",
+      "ja": "ミラー",
+      "en": "Mirror"
     },
     {
       "key": "inspector.mirror_axis",
-      "ja": "対称軸",
+      "ja": "ミラー軸",
       "en": "Mirror Axis"
     },
     {
       "key": "inspector.mirror_help",
-      "ja": "ラティスボックスのローカル軸で対称にします。左右対称の変形をするには、ボックスをアバターの中心へ合わせてください（上の「中心へ」ボタン）。",
-      "en": "Symmetry is applied along the box's local axis. For left-right symmetry, align the box with the avatar center using the \"Center\" button above."
+      "ja": "X / Y / Z を選択するとその軸でミラー変形します（選択中をクリックでOFF）。左右対称の変形をするには、ボックスをアバターの中心へ合わせてください（上の「中心へ」ボタン）。",
+      "en": "Select X, Y, or Z to mirror deformation along that axis (click active axis to turn OFF). For left-right symmetry, align the box with the avatar center using the \"Center\" button above."
     },
     {
       "key": "inspector.bake_header",
@@ -236,14 +231,9 @@
       "en": "Resolution"
     },
     {
-      "key": "overlay.mirror_on",
-      "ja": "ミラー: ON",
-      "en": "Mirror: ON"
-    },
-    {
-      "key": "overlay.mirror_off",
-      "ja": "ミラー: OFF",
-      "en": "Mirror: OFF"
+      "key": "overlay.mirror",
+      "ja": "ミラー",
+      "en": "Mirror"
     },
     {
       "key": "overlay.box_mode_on",

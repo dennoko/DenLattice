@@ -312,8 +312,9 @@ namespace Dennokoworks.DenLattice.Editor
             _settingsUndoGroup = -1;
 
             // MeshEdit のインスタンスが差し替わっていれば、SyncTargetList が
-            // ターゲットごと作り直す（このとき選択も解除される）
-            Refresh(true);
+            // ターゲットごと作り直す（このとき選択も解除される）。
+            // Undo ではアバターの姿勢や元メッシュは変わらないため、頂点キャッシュを再利用して BakeMesh をスキップする
+            Refresh(true, allowCachedVertices: true);
 
             // インスタンスが維持された場合は作業状態だけを作り直す
             foreach (var target in _targets)
@@ -377,8 +378,22 @@ namespace Dennokoworks.DenLattice.Editor
                 return;
             }
 
-            // 別のオブジェクトを選択したら編集モードを抜ける（ツール状態を残さないため）
-            if (!Selection.Contains(_component.gameObject))
+            // 別の無関係なオブジェクトを選択したら編集モードを抜ける（ツール状態を残さないため）。
+            // コンポーネント自身または対象 Renderer のいずれかが選択されている間は編集を維持する
+            var isSelected = Selection.Contains(_component.gameObject);
+            if (!isSelected)
+            {
+                foreach (var edit in _component.edits)
+                {
+                    if (edit?.target != null && Selection.Contains(edit.target.gameObject))
+                    {
+                        isSelected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isSelected)
             {
                 End();
                 return;

@@ -53,9 +53,9 @@ namespace Dennokoworks.DenLattice.Editor
         /// この値を進めるとプレビューパイプラインが作り直される。下流ノードは
         /// <c>IRenderFilterNode.Refresh</c> を実装していないことが多く（Avatar Optimizer も未実装）、
         /// その場合はノードごと作り直しになって <c>BakeMesh</c> とジョブが再実行される。
-        /// ドラッグのフレームレートそのままで叩くと重すぎるので間引く。
+        /// ドラッグや Undo の連打で叩くと重すぎるので間引く。
         /// </summary>
-        private const double SyncIntervalSeconds = 0.05;
+        private const double SyncIntervalSeconds = 0.08;
 
         private static double _nextSync;
         private static bool _syncPending;

@@ -36,6 +36,12 @@ namespace Dennokoworks.DenLattice.Editor
             public readonly List<BoneWeight> BoneWeights = new List<BoneWeight>();
 
             /// <summary>
+            /// ボーンごとの (bone.localToWorldMatrix * bindPose) の事前計算キャッシュ。
+            /// 頂点ごとの重複計算を防ぐ。
+            /// </summary>
+            public Matrix4x4[] BoneMatrices;
+
+            /// <summary>
             /// ラティスボックスの内側にある頂点と、そのボックス内正規化座標。
             ///
             /// ボックスの外の頂点は変形しないので、影響計算はここに載っているものだけを見る。
@@ -121,7 +127,7 @@ namespace Dennokoworks.DenLattice.Editor
         // ------------------------------------------------------------------
         // プロキシからの頂点位置取得
 
-        private void Refresh(bool force)
+        private void Refresh(bool force, bool allowCachedVertices = false)
         {
             if (!force && EditorApplication.timeSinceStartup - _lastRefresh < RefreshIntervalSeconds) return;
             _lastRefresh = EditorApplication.timeSinceStartup;
@@ -170,7 +176,8 @@ namespace Dennokoworks.DenLattice.Editor
                 // 確定時にメッシュが破棄済みでも頂点数を書けるよう、読めたときに控えておく
                 if (mesh != null) target.VertexCount = mesh.vertexCount;
 
-                if (target.Mesh != mesh)
+                var meshChanged = target.Mesh != mesh;
+                if (meshChanged)
                 {
                     target.Mesh = mesh;
 
@@ -190,6 +197,7 @@ namespace Dennokoworks.DenLattice.Editor
 
                 // Scale Adjuster などがシャドウボーンを差し替えることがあるので毎回読み直す
                 target.Bones = target.Skinned != null ? target.Skinned.bones : null;
+                target.BoneMatrices = null;
 
                 // ボックス内判定を取り直すかどうか。
                 //
@@ -199,7 +207,8 @@ namespace Dennokoworks.DenLattice.Editor
                 // 「制御点を元の位置へ戻しても形が戻らない」ことになるため
                 //（→ BuildParams）。上流ツールのスライダー操作などには、
                 // ケージが素の状態のうちに追従しておく。
-                var moved = UpdateWorldVertices(target, out var resized);
+                var canUseCache = allowCachedVertices && !meshChanged;
+                var moved = UpdateWorldVertices(target, out var resized, canUseCache);
                 if (resized || (moved && !_component.HasControlOffsets)) _paramsValid = false;
             }
 
@@ -342,10 +351,17 @@ namespace Dennokoworks.DenLattice.Editor
         /// プロキシからワールド空間の頂点位置を取り直す。位置が実際に変わったら true。
         /// </summary>
         /// <param name="resized">頂点数そのものが変わった場合に true（＝別のメッシュになった）。</param>
-        private static bool UpdateWorldVertices(TargetState target, out bool resized)
+        /// <param name="allowCached">頂点配列が既に存在し頂点数が一致していれば BakeMesh をスキップする。</param>
+        private static bool UpdateWorldVertices(TargetState target, out bool resized, bool allowCached = false)
         {
             resized = false;
             if (target.Proxy == null || target.Mesh == null) return false;
+
+            var vertexCount = target.Mesh.vertexCount;
+            if (allowCached && target.WorldVertices != null && target.WorldVertices.Length == vertexCount)
+            {
+                return false;
+            }
 
             var localToWorld = MeshToWorld(target);
             var source = target.LocalVertices;
@@ -386,6 +402,33 @@ namespace Dennokoworks.DenLattice.Editor
             }
 
             return changed;
+        }
+
+        /// <summary>
+        /// ボーンごとの (bone.localToWorldMatrix * bindPose) を一括事前計算する。
+        /// 頂点ごとに繰り返し計算するのを防ぎ、O(ボーン数) に抑える。
+        /// </summary>
+        private static void UpdateBoneMatrices(TargetState target)
+        {
+            if (target.Bones == null || target.BindPoses.Count == 0)
+            {
+                target.BoneMatrices = null;
+                return;
+            }
+
+            var count = Mathf.Min(target.Bones.Length, target.BindPoses.Count);
+            if (target.BoneMatrices == null || target.BoneMatrices.Length != count)
+            {
+                target.BoneMatrices = new Matrix4x4[count];
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var bone = target.Bones[i];
+                target.BoneMatrices[i] = bone != null
+                    ? bone.localToWorldMatrix * target.BindPoses[i]
+                    : Matrix4x4.identity;
+            }
         }
     }
 }

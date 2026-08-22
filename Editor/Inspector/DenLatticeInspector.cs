@@ -323,6 +323,7 @@ namespace Dennokoworks.DenLattice.Editor
                     GUI.backgroundColor = new Color(0.35f, 0.75f, 1f);
                     if (GUILayout.Button(DenLatticeLocalization.Tr("inspector.btn_edit_start"), GUILayout.Height(28)))
                     {
+                        Selection.activeGameObject = component.gameObject;
                         serializedObject.ApplyModifiedProperties();
                         EditSession.Begin(component);
                     }
@@ -445,54 +446,36 @@ namespace Dennokoworks.DenLattice.Editor
 
         private void DrawMirrorSettings()
         {
-            var mirrorActive = _mirror.boolValue;
-            var prevColor = GUI.backgroundColor;
-            if (mirrorActive) GUI.backgroundColor = new Color(0.35f, 0.95f, 0.45f);
+            EditorGUILayout.LabelField(DenLatticeLocalization.Tr("inspector.mirror_header"), EditorStyles.boldLabel);
 
-            var buttonText = mirrorActive
-                ? DenLatticeLocalization.Tr("inspector.mirror_on")
-                : DenLatticeLocalization.Tr("inspector.mirror_off");
-
-            if (GUILayout.Button(buttonText, GUILayout.Height(26)))
-            {
-                _mirror.boolValue = !mirrorActive;
-                serializedObject.ApplyModifiedProperties();
-                EditSession.NotifySettingsChanged();
-            }
-
-            GUI.backgroundColor = prevColor;
-
-            using (new EditorGUI.DisabledScope(!_mirror.boolValue))
-            {
-                DrawMirrorAxisButtons();
-            }
-
-            if (_mirror.boolValue)
-            {
-                EditorGUILayout.HelpBox(DenLatticeLocalization.Tr("inspector.mirror_help"), MessageType.None);
-            }
-        }
-
-        private void DrawMirrorAxisButtons()
-        {
-            EditorGUILayout.LabelField(DenLatticeLocalization.Tr("inspector.mirror_axis"));
             EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel(DenLatticeLocalization.Tr("inspector.mirror_axis"));
 
             var currentAxis = (LatticeAxis)_mirrorAxis.enumValueIndex;
+            var isMirrorActive = _mirror.boolValue;
             var defaultColor = GUI.backgroundColor;
-            var selectedColor = new Color(0.35f, 0.7f, 1f);
+            var activeColor = new Color(0.35f, 0.95f, 0.45f);
 
             var axes = new[] { LatticeAxis.U, LatticeAxis.V, LatticeAxis.W };
-            var labels = new[] { "U (X)", "V (Y)", "W (Z)" };
+            var labels = new[] { "X", "Y", "Z" };
 
             for (var i = 0; i < axes.Length; i++)
             {
-                var isSelected = currentAxis == axes[i];
-                GUI.backgroundColor = isSelected ? selectedColor : defaultColor;
+                var isSelected = isMirrorActive && currentAxis == axes[i];
+                GUI.backgroundColor = isSelected ? activeColor : defaultColor;
 
-                if (GUILayout.Button(labels[i], GUILayout.Height(24)) && !isSelected)
+                if (GUILayout.Button(labels[i], GUILayout.Height(24)))
                 {
-                    _mirrorAxis.enumValueIndex = (int)axes[i];
+                    if (isSelected)
+                    {
+                        _mirror.boolValue = false;
+                    }
+                    else
+                    {
+                        _mirror.boolValue = true;
+                        _mirrorAxis.enumValueIndex = (int)axes[i];
+                    }
+
                     serializedObject.ApplyModifiedProperties();
                     EditSession.NotifySettingsChanged();
                 }
@@ -500,6 +483,8 @@ namespace Dennokoworks.DenLattice.Editor
 
             GUI.backgroundColor = defaultColor;
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.HelpBox(DenLatticeLocalization.Tr("inspector.mirror_help"), MessageType.None);
         }
 
         // ------------------------------------------------------------------

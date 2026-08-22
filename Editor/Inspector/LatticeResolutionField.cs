@@ -27,9 +27,9 @@ namespace Dennokoworks.DenLattice.Editor
 
             EditorGUILayout.BeginHorizontal();
 
-            var u = DrawAxis("U", current.x, axisWidth);
-            var v = DrawAxis("V", current.y, axisWidth);
-            var w = DrawAxis("W", current.z, axisWidth);
+            var u = DrawAxis("X", current.x, axisWidth);
+            var v = DrawAxis("Y", current.y, axisWidth);
+            var w = DrawAxis("Z", current.z, axisWidth);
 
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();

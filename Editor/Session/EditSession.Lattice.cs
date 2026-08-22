@@ -258,6 +258,7 @@ namespace Dennokoworks.DenLattice.Editor
 
             foreach (var target in _targets)
             {
+                UpdateBoneMatrices(target);
                 target.InBoxIndices.Clear();
                 target.InBoxParams.Clear();
 
@@ -367,6 +368,7 @@ namespace Dennokoworks.DenLattice.Editor
 
             foreach (var target in _targets)
             {
+                UpdateBoneMatrices(target);
                 var indices = target.InBoxIndices;
                 var parameters = target.InBoxParams;
 
@@ -563,6 +565,12 @@ namespace Dennokoworks.DenLattice.Editor
                 return fallback;
             }
 
+            if (target.BoneMatrices == null)
+            {
+                UpdateBoneMatrices(target);
+                if (target.BoneMatrices == null) return fallback;
+            }
+
             var bw = target.BoneWeights[index];
             var accumulated = new Matrix4x4();
             var total = 0f;
@@ -586,12 +594,9 @@ namespace Dennokoworks.DenLattice.Editor
         private static float Accumulate(ref Matrix4x4 accumulated, TargetState target, int boneIndex, float weight)
         {
             if (weight <= 0f) return 0f;
-            if (boneIndex < 0 || boneIndex >= target.Bones.Length || boneIndex >= target.BindPoses.Count) return 0f;
+            if (target.BoneMatrices == null || boneIndex < 0 || boneIndex >= target.BoneMatrices.Length) return 0f;
 
-            var bone = target.Bones[boneIndex];
-            if (bone == null) return 0f;
-
-            var m = bone.localToWorldMatrix * target.BindPoses[boneIndex];
+            var m = target.BoneMatrices[boneIndex];
             for (var i = 0; i < 16; i++) accumulated[i] += m[i] * weight;
 
             return weight;
@@ -626,15 +631,10 @@ namespace Dennokoworks.DenLattice.Editor
             SceneView.RepaintAll();
         }
 
-        /// <summary>制御点を格子位置へ戻す。確定済みの頂点デルタには触れない。</summary>
+        /// <summary>制御点を格子位置へ戻す。確定済みの頂点デルタに合わせてボックスサイズを再フィットする。</summary>
         internal void ResetControlPoints()
         {
-            if (!LatticeResampler.ResetCage(_component)) return;
-
-            SyncOffsetsFromComponent();
-            RecomputeCenter();
-            BuildInfluences();
-            SceneView.RepaintAll();
+            AutoFitBox();
         }
 
         /// <summary>
@@ -697,9 +697,9 @@ namespace Dennokoworks.DenLattice.Editor
 
             var size = max - min;
 
-            // 境界上の頂点が判定から漏れないよう、わずかに余白を持たせる
-            var margin = Mathf.Max(size.magnitude * 0.01f, 1e-3f);
-            size += Vector3.one * (margin * 2f);
+            // 境界上の頂点が判定から漏れないよう、各軸 5%（最低 1cm）の余白を持たせる
+            var margin = Vector3.Max(size * 0.05f, Vector3.one * 0.01f);
+            size += margin * 2f;
 
             ApplyBoxTransform((min + max) * 0.5f, Quaternion.identity, size, "Dennoko Lattice Fit Box");
         }
