@@ -8,7 +8,6 @@ namespace Dennokoworks.DenLattice.Editor
     {
         private SerializedProperty _edits;
         private SerializedProperty _interpolation;
-        private SerializedProperty _freezeBorder;
         private SerializedProperty _mirror;
         private SerializedProperty _mirrorAxis;
         private SerializedProperty _bakeAsBlendShape;
@@ -59,7 +58,6 @@ namespace Dennokoworks.DenLattice.Editor
         {
             _edits = serializedObject.FindProperty("edits");
             _interpolation = serializedObject.FindProperty("interpolation");
-            _freezeBorder = serializedObject.FindProperty("freezeBorder");
             _mirror = serializedObject.FindProperty("mirror");
             _mirrorAxis = serializedObject.FindProperty("mirrorAxis");
             _bakeAsBlendShape = serializedObject.FindProperty("bakeAsBlendShape");
@@ -380,10 +378,6 @@ namespace Dennokoworks.DenLattice.Editor
             EditorGUILayout.PropertyField(_interpolation,
                 new GUIContent(DenLatticeLocalization.Tr("inspector.interpolation"),
                     DenLatticeLocalization.Tr("inspector.interpolation_tooltip")));
-
-            EditorGUILayout.PropertyField(_freezeBorder,
-                new GUIContent(DenLatticeLocalization.Tr("inspector.freeze_border"),
-                    DenLatticeLocalization.Tr("inspector.freeze_border_tooltip")));
 
             EditorGUILayout.HelpBox(DenLatticeLocalization.Tr("inspector.resolution_help"), MessageType.None);
 

@@ -182,27 +182,6 @@ namespace Dennokoworks.DenLattice.Editor
             return _component.ControlIndex(i, j, k);
         }
 
-        /// <summary>
-        /// 動かせる制御点か。「境界の制御点を固定」が有効なとき、最外殻は動かせない。
-        /// ボックス境界での段差（変形部と非変形部の不連続）を防ぐためのもの。
-        /// </summary>
-        private bool IsMovable(int index)
-        {
-            if (!_component.freezeBorder) return true;
-
-            var resU = _component.ResU;
-            var resV = _component.ResV;
-            var resW = _component.ResW;
-
-            var i = index % resU;
-            var j = index / resU % resV;
-            var k = index / (resU * resV);
-
-            return i > 0 && i < resU - 1
-                         && j > 0 && j < resV - 1
-                         && k > 0 && k < resW - 1;
-        }
-
         /// <summary>選択中の制御点の重心。移動ハンドルの基準位置になる。</summary>
         private void RecomputeCenter()
         {
@@ -312,7 +291,6 @@ namespace Dennokoworks.DenLattice.Editor
             foreach (var index in _selected)
             {
                 if (index < 0 || index >= _controlWeights.Length) continue;
-                if (!IsMovable(index)) continue;
 
                 _controlWeights[index] = 1f;
             }
@@ -322,7 +300,6 @@ namespace Dennokoworks.DenLattice.Editor
             foreach (var index in _selected)
             {
                 if (index < 0 || index >= _controlWeights.Length) continue;
-                if (!IsMovable(index)) continue;
 
                 var mirrored = MirrorIndexOf(index);
 
@@ -336,7 +313,6 @@ namespace Dennokoworks.DenLattice.Editor
                 // 相手も選択されている場合は、その相手が自分の変位を既に受け取っている。
                 // ここで反射分まで足すと二重に動く
                 if (_selected.Contains(mirrored)) continue;
-                if (!IsMovable(mirrored)) continue;
 
                 _controlMirrorWeights[mirrored] = 1f;
             }

@@ -162,10 +162,6 @@ namespace Dennokoworks.DenLattice.Editor
                 _active.SyncOffsetsFromComponent();
             }
 
-            // 境界固定は「動かせる制御点」の集合を変える。固定された点が選択に残ると
-            // 掴めない点が選択されて見えるので、選び直させる
-            if (_active._component.freezeBorder) _active.PruneFrozenSelection();
-
             _active.RecomputeCenter();
             _active.BuildInfluences();
 
@@ -525,7 +521,6 @@ namespace Dennokoworks.DenLattice.Editor
 
             for (var i = 0; i < _controlWorld.Length; i++)
             {
-                if (!IsMovable(i)) continue;
                 if (!TryProject(_controlWorld[i], out var screen)) continue;
 
                 var distance = (screen - mousePosition).sqrMagnitude;
@@ -584,7 +579,6 @@ namespace Dennokoworks.DenLattice.Editor
 
             for (var i = 0; i < _controlWorld.Length; i++)
             {
-                if (!IsMovable(i)) continue;
                 if (!TryProject(_controlWorld[i], out var screen)) continue;
                 if (!rect.Contains(screen)) continue;
 

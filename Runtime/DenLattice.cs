@@ -74,9 +74,6 @@ namespace Dennokoworks.DenLattice
         [Tooltip("ミラーの対称軸。ラティスボックスのローカル軸で解釈します。")]
         public LatticeAxis mirrorAxis = LatticeAxis.U;
 
-        [Tooltip("最外殻の制御点を動かせなくします。ボックス境界での段差を防げます。")]
-        public bool freezeBorder;
-
         [Tooltip("ON にすると、元の形状を保ったまま変形分をシェイプキーとして追加します。")]
         public bool bakeAsBlendShape;
 

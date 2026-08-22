@@ -111,16 +111,6 @@
       "en": "Trilinear moves only the neighborhood of a control point. B-Spline is the smoothest but does not pass through control points. Catmull-Rom sits in between."
     },
     {
-      "key": "inspector.freeze_border",
-      "ja": "境界の制御点を固定",
-      "en": "Freeze Border"
-    },
-    {
-      "key": "inspector.freeze_border_tooltip",
-      "ja": "最外殻の制御点を動かせなくします。三線形では境界の段差が完全に無くなります（B-Spline / Catmull-Rom では小さくなりますが完全には消えません）。",
-      "en": "Locks the outermost shell of control points. With Trilinear this removes the seam at the box boundary entirely; with the cubic bases it only reduces it."
-    },
-    {
       "key": "inspector.box_header",
       "ja": "ラティスボックス",
       "en": "Lattice Box"

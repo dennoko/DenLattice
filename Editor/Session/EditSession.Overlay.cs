@@ -295,13 +295,6 @@ namespace Dennokoworks.DenLattice.Editor
             GUILayout.Label(DenLatticeLocalization.Tr("overlay.hint_esc"), style);
         }
 
-        /// <summary>境界固定を有効にしたときに、動かせなくなった制御点を選択から外す。</summary>
-        private void PruneFrozenSelection()
-        {
-            _selected.RemoveWhere(index => !IsMovable(index));
-            if (!_hasSelection) ClearSelection();
-        }
-
         /// <summary>
         /// オーバーレイでの設定変更を Undo 1 段にまとめる。
         ///

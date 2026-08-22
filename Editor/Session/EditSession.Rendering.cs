@@ -28,12 +28,10 @@ namespace Dennokoworks.DenLattice.Editor
         private static readonly Color ControlColor = new Color(0.85f, 0.9f, 0.95f, 0.95f);
         private static readonly Color SelectedColor = new Color(1f, 0.45f, 0.2f, 1f);
         private static readonly Color HoverColor = new Color(1f, 0.85f, 0.25f, 1f);
-        private static readonly Color FrozenColor = new Color(0.45f, 0.45f, 0.5f, 0.6f);
 
         private readonly List<Vector3> _cageBuffer = new List<Vector3>();
         private readonly List<Vector3> _controlBuffer = new List<Vector3>();
         private readonly List<Vector3> _selectedBuffer = new List<Vector3>();
-        private readonly List<Vector3> _frozenBuffer = new List<Vector3>();
 
         private static Vector2[] PrecomputeUnitCircle(int segments)
         {
@@ -161,22 +159,14 @@ namespace Dennokoworks.DenLattice.Editor
 
             var normal = _controlBuffer;
             var selected = _selectedBuffer;
-            var frozen = _frozenBuffer;
 
             normal.Clear();
             selected.Clear();
-            frozen.Clear();
 
             for (var i = 0; i < _controlWorld.Length; i++)
             {
                 var world = _controlWorld[i];
                 var size = HandleUtility.GetHandleSize(world) * ControlDotScale;
-
-                if (!IsMovable(i))
-                {
-                    AddCircle(frozen, world, right, up, size * 0.7f);
-                    continue;
-                }
 
                 if (_selected.Contains(i))
                 {
@@ -191,7 +181,6 @@ namespace Dennokoworks.DenLattice.Editor
 
             var previousColor = Handles.color;
 
-            DrawBuffer(frozen, FrozenColor);
             DrawBuffer(normal, ControlColor);
             DrawBuffer(selected, SelectedColor);
 
