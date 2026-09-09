@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,10 +19,29 @@ namespace Dennokoworks.DenLattice.Editor
         private DennokoVersionChecker.Result _versionResult;
         private static GUIStyle _versionLinkStyle;
 
+        /// <summary>
+        /// 直近にメニューが実行された時刻。多重実行の抑止に使う（<see cref="AddDenLatticeMenuItem"/>）。
+        /// </summary>
+        private static double _lastMenuInvokeTime = double.NegativeInfinity;
+
+        /// <summary>
+        /// 同一のメニュー実行による連続呼び出しとみなす間隔（秒）。
+        /// Unity 側の呼び出しは同一フレーム内で連続するため、手で 2 回実行できない程度の値で足りる。
+        /// </summary>
+        private const double MenuReentryGuardSeconds = 0.2;
+
         [MenuItem("GameObject/dennokoworks/Dennoko Lattice", false, 20)]
         private static void AddDenLatticeMenuItem(MenuCommand menuCommand)
         {
-            var target = menuCommand.context as GameObject ?? Selection.activeGameObject;
+            // Unity は複数選択中に GameObject メニューを実行すると、選択オブジェクトの数だけ
+            // 同じメニュー項目を連続で呼び出す。ここでは最初の 1 回で選択全体をまとめて処理するので、
+            // 直後に続く呼び出しは捨てる（そうしないと選択の数だけコンポーネントが増える）。
+            var now = EditorApplication.timeSinceStartup;
+            if (now - _lastMenuInvokeTime < MenuReentryGuardSeconds) return;
+            _lastMenuInvokeTime = now;
+
+            var renderers = CollectSelectedRenderers();
+            var target = ResolveMenuTarget(menuCommand, renderers);
 
             if (target == null)
             {
@@ -36,24 +56,137 @@ namespace Dennokoworks.DenLattice.Editor
                 component = Undo.AddComponent<DenLattice>(target);
             }
 
-            Selection.activeGameObject = target;
-
-            var renderer = target.GetComponent<Renderer>();
-            if (!(renderer is SkinnedMeshRenderer) && !(renderer is MeshRenderer)) return;
-
-            if (component.edits.Count == 0)
+            // 付与先が自分のメッシュを持つなら、それを対象リストの先頭に置く。
+            // コンポーネントが載っているオブジェクト自身のメッシュが 1 番目に並ぶ方が読みやすい。
+            var ownRenderer = target.GetComponent<Renderer>();
+            if (IsEditableRenderer(ownRenderer))
             {
-                // グループは切らない。直前の AddComponent と同じ 1 段に入れて、
-                // Ctrl+Z 一回で「追加する前」へ戻れるようにする
-                DenLatticeUndo.Record(component, "Add Target to DenLattice");
+                renderers.Remove(ownRenderer);
+                renderers.Insert(0, ownRenderer);
+            }
+
+            var recorded = false;
+            foreach (var renderer in renderers)
+            {
+                // Reset() による自動登録や、既存コンポーネントに設定済みの対象と重複させない
+                if (component.FindEdit(renderer) != null) continue;
+
+                if (!recorded)
+                {
+                    // グループは切らない。直前の AddComponent と同じ 1 段に入れて、
+                    // Ctrl+Z 一回で「追加する前」へ戻れるようにする
+                    DenLatticeUndo.Record(component, "Add Target to DenLattice");
+                    recorded = true;
+                }
+
                 component.edits.Add(new MeshEdit { target = renderer });
+            }
+
+            if (recorded)
+            {
                 DenLatticeUndo.Apply(component);
             }
 
-            if (MeshDeltaApplier.GetSharedMesh(renderer) != null)
+            Selection.activeGameObject = target;
+
+            // どのオブジェクトに付いたのかを一瞬だけ色で示す
+            HierarchyHighlight.Flash(target);
+
+            if (HasEditableMesh(component))
             {
                 EditSession.Begin(component);
             }
+        }
+
+        /// <summary>
+        /// 選択中の GameObject から、変形対象になり得る Renderer を選択順に集める。
+        /// </summary>
+        private static List<Renderer> CollectSelectedRenderers()
+        {
+            var result = new List<Renderer>();
+
+            foreach (var go in Selection.gameObjects)
+            {
+                if (go == null) continue;
+
+                // Project ビューで選択されたプレハブアセットはシーン上の変形対象にならない
+                if (EditorUtility.IsPersistent(go)) continue;
+
+                var renderer = go.GetComponent<Renderer>();
+                if (!IsEditableRenderer(renderer)) continue;
+                if (result.Contains(renderer)) continue;
+
+                result.Add(renderer);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// コンポーネントを付ける GameObject を決める。
+        ///
+        /// <see cref="MenuCommand.context"/> にはメニュー実行の起点になったオブジェクトが入る
+        /// （ヒエラルキーの右クリックならクリックしたオブジェクト）。それが変形対象に含まれていれば
+        /// それを使い、使えなければ「最後に触ったもの」である <see cref="Selection.activeGameObject"/>、
+        /// それも対象外なら選択順で最初の対象へ落とす。
+        /// </summary>
+        private static GameObject ResolveMenuTarget(MenuCommand menuCommand, List<Renderer> renderers)
+        {
+            var context = menuCommand.context as GameObject;
+
+            if (renderers.Count > 0)
+            {
+                if (Contains(renderers, context)) return context;
+                if (Contains(renderers, Selection.activeGameObject)) return Selection.activeGameObject;
+
+                return renderers[0].gameObject;
+            }
+
+            // メッシュを 1 つも選んでいない場合は、従来どおり起点のオブジェクトへ付ける
+            return context != null ? context : Selection.activeGameObject;
+        }
+
+        private static bool Contains(List<Renderer> renderers, GameObject go)
+        {
+            if (go == null) return false;
+
+            foreach (var renderer in renderers)
+            {
+                if (renderer.gameObject == go) return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsEditableRenderer(Renderer renderer)
+        {
+            return renderer is SkinnedMeshRenderer || renderer is MeshRenderer;
+        }
+
+        /// <summary>
+        /// 追加スロットから変形対象にできる Renderer か。
+        ///
+        /// スロットは Project ビューからのドロップも受け取れてしまう（<c>ObjectField</c> は
+        /// シーンとアセットの両方を許可する）。プレハブアセットの Renderer を登録しても
+        /// シーン上には何も現れず、変形がアセット側を向いてしまうので、右クリック追加
+        /// （→ <see cref="CollectSelectedRenderers"/>）と同じくここで落とす。
+        /// </summary>
+        private static bool IsAddableRenderer(Renderer renderer)
+        {
+            if (!IsEditableRenderer(renderer)) return false;
+
+            return !EditorUtility.IsPersistent(renderer);
+        }
+
+        /// <summary>変形を開始できる（メッシュを取得できる）対象が 1 つでもあるか。</summary>
+        private static bool HasEditableMesh(DenLattice component)
+        {
+            foreach (var edit in component.edits)
+            {
+                if (edit != null && MeshDeltaApplier.GetSharedMesh(edit.target) != null) return true;
+            }
+
+            return false;
         }
 
         private void OnEnable()
@@ -255,25 +388,124 @@ namespace Dennokoworks.DenLattice.Editor
                 _edits.DeleteArrayElementAtIndex(removeAt);
             }
 
-            if (GUILayout.Button(DenLatticeLocalization.Tr("inspector.add_target")))
-            {
-                // arraySize++ は直前の要素を複製する。変形データ（byte[] blob）まで
-                // 引き継がれると厄介なので、素の MeshEdit を直接追加する
-                serializedObject.ApplyModifiedProperties();
-
-                var component = (DenLattice)target;
-                DenLatticeUndo.BeginGroup(component, "Add Dennoko Lattice Target");
-                component.edits.Add(new MeshEdit());
-                DenLatticeUndo.Apply(component);
-                DenLatticeUndo.EndGroup();
-
-                serializedObject.Update();
-            }
+            DrawAddTargetSlot();
 
             if (_edits.arraySize == 0)
             {
                 EditorGUILayout.HelpBox(DenLatticeLocalization.Tr("inspector.add_target_prompt"), MessageType.Info);
             }
+        }
+
+        /// <summary>
+        /// 常設の追加用スロット。ここへ Renderer を持つオブジェクトをドラッグ＆ドロップすると、
+        /// そのまま変形対象へ加わる。
+        ///
+        /// 以前は「対象を追加」ボタンで空の要素を作ってから割り当てる 2 手が必要だった。
+        /// スロットは常に空のまま（値を保持しない）なので、続けて何個でも放り込める。
+        /// </summary>
+        private void DrawAddTargetSlot()
+        {
+            var rect = EditorGUILayout.GetControlRect();
+
+            // 複数同時のドロップは ObjectField が扱えない（1 個しか受け取らない）ので、
+            // ObjectField へ渡る前に自前で処理する
+            HandleMultiDrop(rect);
+
+            var label = new GUIContent(
+                DenLatticeLocalization.Tr("inspector.add_target"),
+                DenLatticeLocalization.Tr("inspector.add_target_tooltip"));
+
+            // 表示値は常に null。追加した対象は上のリストへ並ぶので、スロットに残す意味がない
+            var picked = EditorGUI.ObjectField(rect, label, null, typeof(Renderer), true) as Renderer;
+            if (picked == null) return;
+
+            AddTargets(new List<Renderer> { picked });
+        }
+
+        /// <summary>
+        /// スロットへの複数同時ドロップを処理する。1 個だけのドラッグは <c>ObjectField</c> へ任せ、
+        /// 枠のハイライトなどを Unity 標準の見た目のままにする。
+        /// </summary>
+        private void HandleMultiDrop(Rect rect)
+        {
+            var evt = Event.current;
+            if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform) return;
+            if (DragAndDrop.objectReferences.Length <= 1) return;
+            if (!rect.Contains(evt.mousePosition)) return;
+
+            var renderers = CollectDroppedRenderers(DragAndDrop.objectReferences);
+            if (renderers.Count == 0) return;
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+
+            if (evt.type == EventType.DragPerform)
+            {
+                DragAndDrop.AcceptDrag();
+                AddTargets(renderers);
+            }
+
+            evt.Use();
+        }
+
+        /// <summary>
+        /// ドロップされたオブジェクトから変形対象になり得る Renderer を取り出す。
+        /// メッシュを持たない Renderer（パーティクルなど）・プレハブアセット・重複は落とす。
+        /// </summary>
+        private static List<Renderer> CollectDroppedRenderers(Object[] dropped)
+        {
+            var result = new List<Renderer>();
+
+            foreach (var obj in dropped)
+            {
+                var renderer = obj as Renderer;
+                if (renderer == null && obj is GameObject go)
+                {
+                    renderer = go.GetComponent<Renderer>();
+                }
+
+                if (!IsAddableRenderer(renderer)) continue;
+                if (result.Contains(renderer)) continue;
+
+                result.Add(renderer);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 変形対象へ追加する。既に登録済みのものは飛ばし、実際に増えたときだけ Undo を 1 段積む。
+        /// </summary>
+        private void AddTargets(List<Renderer> renderers)
+        {
+            // arraySize++ は直前の要素を複製する。変形データ（byte[] blob）まで
+            // 引き継がれると厄介なので、SerializedProperty で個別に潰すのではなく
+            // 素の MeshEdit を直接追加する
+            serializedObject.ApplyModifiedProperties();
+
+            var component = (DenLattice)target;
+            var added = false;
+
+            foreach (var renderer in renderers)
+            {
+                if (!IsAddableRenderer(renderer)) continue;
+                if (component.FindEdit(renderer) != null) continue;
+
+                if (!added)
+                {
+                    DenLatticeUndo.BeginGroup(component, "Add Dennoko Lattice Target");
+                    added = true;
+                }
+
+                component.edits.Add(new MeshEdit { target = renderer });
+            }
+
+            if (added)
+            {
+                DenLatticeUndo.Apply(component);
+                DenLatticeUndo.EndGroup();
+            }
+
+            serializedObject.Update();
         }
 
         private static void DrawTargetWarning(SerializedProperty targetProp, SerializedProperty vertexCountProp)

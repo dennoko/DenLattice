@@ -37,10 +37,14 @@ In the Hierarchy, right-click the GameObject with the target mesh and select `de
 
 - **When added via right-click on an object with a Renderer:**
   The mesh is automatically registered as an edit target, the lattice box automatically fits to the mesh bounds, and **Edit Mode begins immediately**.
+- **When added with multiple objects selected:**
+  **All selected meshes are registered as deform targets**, and the lattice box fits around all of them. Only one component is added, on the object you right-clicked (or, when that cannot be determined, the one selected last).
 - **When added to an object without a Renderer:**
-  Only the component is added. Specify the desired Renderer via **"Add Target"** in the Inspector.
+  Only the component is added. Specify the desired Renderer in the **"Add Target"** field in the Inspector.
 
-To edit multiple meshes simultaneously, add Renderers using **"Add Target"** in the Inspector.
+The object that received the component is briefly highlighted in the Hierarchy.
+
+To add more targets later, **drag objects that have a mesh into the empty "Add Target" field** at the bottom of the "Targets" list in the Inspector. You can drop several at once.
 Registering both clothing and the body mesh allows you to deform them together within the same lattice space without clipping.
 
 ### 2. Editing in the Scene View
