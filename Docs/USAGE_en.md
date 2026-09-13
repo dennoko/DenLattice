@@ -38,7 +38,10 @@ In the Hierarchy, right-click the GameObject with the target mesh and select `de
 - **When added via right-click on an object with a Renderer:**
   The mesh is automatically registered as an edit target, the lattice box automatically fits to the mesh bounds, and **Edit Mode begins immediately**.
 - **When added with multiple objects selected:**
-  **All selected meshes are registered as deform targets**, and the lattice box fits around all of them. Only one component is added, on the object you right-clicked (or, when that cannot be determined, the one selected last).
+  **All selected meshes are registered as deform targets**, and the lattice box fits around all of them. Only one component is added, on the object chosen in this order:
+  1. **The object you right-clicked** (right-click the one you want it on. Any selected object works, including a parent without a mesh)
+  2. When run from somewhere other than a right-click (such as the top menu bar), the mesh you clicked last to select
+  3. Otherwise, the selected mesh that appears highest in the Hierarchy
 - **When added to an object without a Renderer:**
   Only the component is added. Specify the desired Renderer in the **"Add Target"** field in the Inspector.
 
