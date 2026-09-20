@@ -267,13 +267,6 @@ namespace Dennokoworks.DenLattice.Editor
             // Inspector を選び直すたびに一時的な取得失敗から自己回復できる。
             ReloadVersionResult();
             DenLatticeVersion.StartCheckBackgroundTask();
-
-            // 選択アウトラインを戻しそこねていた場合の自己回復。判定に IsActive(target) を
-            // 使わないのは、別の対象へ選択を移した直後はまだ前のセッションが生きているため。
-            if (EditSession.Active == null)
-            {
-                SelectionOutline.Restore();
-            }
         }
 
         private void OnDisable()

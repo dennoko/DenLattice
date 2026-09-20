@@ -7,8 +7,8 @@
 
 ## 判定
 
-🔍 **要検証** ＋ ⛔ **外部依存あり** — Unity 6 非対応の API は **0 件**。修正すべきコードはない。
-UnityEditor 内部 API へのリフレクションが 1 箇所あり、Unity 6 上での実動作確認が必要。
+⛔ **外部依存あり** — Unity 6 非対応の API は **0 件**。修正すべきコードはない。
+選択アウトライン抑制の廃止により、UnityEditor 内部 API へのリフレクションも **0 件**。
 
 ## 構成
 
@@ -25,37 +25,17 @@ SDK 未導入環境でもコンパイルが通るよう配慮されている。
 
 ## 検出事項
 
-### 1. `UnityEditor.AnnotationUtility` へのリフレクション（🔍 要検証・本ツール最大のリスク）
+### 1. `UnityEditor.AnnotationUtility` へのリフレクション（✅ 解消済み）
 
-`Editor/Session/SelectionOutline.cs:124-145`
+v1.0.2 まで選択アウトラインを internal API で自動抑制していたが、機能ごと廃止した。
+Unity 全体の永続設定を書き換え、エディタが落ちると OFF のまま残るなどの副作用が理由。
+選択ワイヤーフレームを `EditorUtility.SetSelectedRenderState` で隠す処理も撤去した。
+必要に応じて Scene ビューの Gizmos メニューで Selection Outline / Selection Wire を切り替える。
 
-```csharp
-var type = typeof(EditorUtility).Assembly.GetType("UnityEditor.AnnotationUtility");
-...
-var property = type.GetProperty("showSelectionOutline",
-                   BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-```
-
-- `UnityEditor.AnnotationUtility.showSelectionOutline` は **Unity 本体の internal API**。
-  ラティス編集中に SceneView の選択アウトライン（オレンジ枠）を一時的に抑制するために使用。
-- Unity 6 で改名・移動・削除されてもコンパイルエラーにならず、静かに解決失敗する。
-- 実装は非常に防御的:
-  - `typeof(EditorUtility).Assembly` を優先して探し、見つからなければ全アセンブリを走査（`:138-145`）
-  - プロパティ型が `bool` で読み書き可能であることまで検証（`:128-133`）
-  - **失敗をキャッシュしない**（ソース内コメント `:112-115` に理由が明記されている）
-    — ドメインリロード直後の未解決状態を「見つからない」と覚え込まないための配慮
-
-**Unity 6 で起きること**: 例外は出ず、**編集中に選択アウトラインが出たままになる**だけ。
-機能は失われるが、ラティス変形そのものは動作する。気付きにくい見た目の劣化。
-
-**対応**
-
-1. Unity 6 上でラティス編集を開始し、選択アウトラインが消えるか目視確認する。
-2. 解決失敗時に一度だけ警告ログを出す（ただし本実装は失敗をキャッシュしない設計なので、
-   毎フレーム出力しないようフラグ管理に注意する）。
-
-> 同一実装が `DennokoMeshEditor/Editor/Session/SelectionOutline.cs` にも存在する。
-> 片方を修正したらもう片方も同じ修正を入れること。
+`SelectionOutline.cs` はコメントのみとし、ファイルと GUID を保持する。
+上書きインポートで旧実装を置き換えるため、パッケージのエクスポート対象から外さない。
+旧版の EditorPrefs 退避キーは読み出す実装がなく無害。旧版でアウトラインが消えたままなら、
+Gizmos メニューから手動で ON に戻す。DennokoMeshEditor の `c828b9d` と同じ方針。
 
 ### 2. `Handles.matrix` によるローカル座標描画（✅ 影響なし）
 
@@ -125,9 +105,7 @@ Unity 6 でも true。旧分岐が死にコードになるだけ。**修正不�
 
 ### フェーズ 1（Unity 2022.3.22f1 のまま実施可）
 
-- [ ] `SelectionOutline.ResolveProperty()` の解決失敗時に警告ログを追加
-      （毎フレーム出力しないようフラグ管理する。失敗をキャッシュしない設計は維持すること）
-- [ ] 同じ修正を `DennokoMeshEditor/Editor/Session/SelectionOutline.cs` にも適用
+- [x] 選択アウトライン／選択ワイヤーフレーム抑制と内部 API 依存を撤去
 
 ### フェーズ 3（外部依存の Unity 6 対応後）
 
@@ -146,8 +124,7 @@ Unity 6 でも true。旧分岐が死にコードになるだけ。**修正不�
 - [ ] コンパイルエラー・警告が 0 件
 - [ ] `GameObject/dennokoworks/Dennoko Lattice` からラティスを追加できる
 - [ ] カスタムインスペクタが正しく描画される
-- [ ] **編集開始時に SceneView の選択アウトラインが消える**（`AnnotationUtility` リフレクションの確認）
-- [ ] 編集終了時に選択アウトラインが元に戻る（設定の復元）
+- [ ] 編集開始・終了で Gizmos の Selection Outline / Selection Wire 設定が変わらない
 - [ ] ラティスの格子点を SceneView 上でドラッグして変形できる
 - [ ] `Handles.matrix` によるローカル座標での格子描画が正しい位置に出る
 - [ ] Undo / Redo が正しく動作する

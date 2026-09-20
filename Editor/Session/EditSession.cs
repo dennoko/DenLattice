@@ -113,9 +113,6 @@ namespace Dennokoworks.DenLattice.Editor
             _toolsHiddenBefore = Tools.hidden;
             Tools.hidden = true;
 
-            // 変形前の形状で描かれる選択アウトラインが変形結果に重なるのを避ける
-            SelectionOutline.Suppress();
-
             // プレビューフィルタへ「編集開始」を伝え、プロキシを生成させる
             ActiveComponent.Value = component;
 
@@ -141,7 +138,6 @@ namespace Dennokoworks.DenLattice.Editor
 
                 // 開始前の状態へ戻す（ユーザーが自分でツールを隠していた場合を潰さない）
                 Tools.hidden = _toolsHiddenBefore;
-                SelectionOutline.Restore();
                 ActiveComponent.Value = null;
 
                 UnityEditorInternal.InternalEditorUtility.RepaintAllViews();

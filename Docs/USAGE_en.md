@@ -170,3 +170,16 @@ Deformation is safely paused. Use "Clear All Deformation" in the Inspector to re
 - Verify that the `DenLattice` component and GameObject are active.
 - Ensure target Renderers are assigned.
 - Confirm NDMF preview is active in the Scene View.
+
+### An Offset Orange Outline Overlaps the Mesh While Editing
+
+The shape you see while editing is the NDMF preview, but the selection outline (orange) and the
+selection wireframe are drawn from the **pre-edit shape**. This leaves offset lines on top of the
+vertices you moved.
+
+Turn off **Gizmos menu → Selection Outline** (and Selection Wire below it) at the top right of the
+Scene view. This is an editor-wide setting, so turn it back on when you are done editing.
+
+> Up to v1.0.2 the tool suppressed this automatically, but that required rewriting an editor-wide
+> setting and was removed because of the side effects. If the outline is missing after using an
+> older version, you can turn it back on from the same Gizmos menu.

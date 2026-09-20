@@ -99,8 +99,18 @@ DME の 5 原則をそのまま引き継ぐ。
 - U/V/W ごとに別々の補間方式を選ぶ機能
 - 制御点のアニメーション、シェイプキーとしての制御点保持
 - 法線・接線の再計算（DME と同じく、元の値を保持）
+- 編集中の選択アウトライン／選択ワイヤーフレームの自動抑制
 
 トポロジを変えないことは仕様上の重要な前提であり、頂点インデックス基準のデルタが成立する条件でもある。
+
+---
+
+### 選択アウトライン抑制を撤去した理由
+
+Unity 全体の永続設定を書き換える方式は、エディタが落ちると OFF のまま残る副作用がある。
+Renderer 単位で選択ワイヤーフレームを隠す方式も、選択変更のたびに再適用する常駐処理が必要になる。
+見た目の改善に対して副作用と保守コストが見合わないため、DennokoMeshEditor と同様に撤去した。
+編集中に変形前の輪郭が重なる場合は、Scene ビューの Gizmos メニューで Selection Outline / Selection Wire を切り替える。
 
 ---
 
@@ -487,7 +497,7 @@ Assets/dennokoworks/DenLattice/
 
 | 状態 | ファイル |
 | --- | --- |
-| **そのまま流用**（識別子の置換のみ） | `MeshEdit` / `MeshDeltaApplier` / `ProxyRegistry` / `LiveEdits` / `DownstreamGuard` / `DenLatticePreviewNode` / `DenLatticePreviewFilter` / `DenLatticePlugin` / `DenLatticeBaker` / `SelectionOutline` / `DennokoVersionChecker` / `DenLatticeVersion` / `DenLatticeLocalization` |
+| **そのまま流用**（識別子の置換のみ） | `MeshEdit` / `MeshDeltaApplier` / `ProxyRegistry` / `LiveEdits` / `DownstreamGuard` / `DenLatticePreviewNode` / `DenLatticePreviewFilter` / `DenLatticePlugin` / `DenLatticeBaker` / `DennokoVersionChecker` / `DenLatticeVersion` / `DenLatticeLocalization` |
 | **構造を流用して中身を差し替え** | `EditSession`（ライフサイクル・Undo 規律・確定処理・警告表示は DME のまま、選択とドラッグ配分だけラティス化）/ `EditSession.State`（遮蔽・スクリーン座標キャッシュを削除し、ボックス内判定を追加）/ `EditSession.Overlay` / `DenLatticeInspector` |
 | **新規** | `LatticeBasis`（基底評価）/ `LatticeResampler`（格子数変更）/ `EditSession.Lattice`（ボックス・パラメータ化・影響計算）/ `EditSession.Rendering`（ケージ描画）/ `DenLattice`（コンポーネント）/ `VectorBlob` / Enums |
 
