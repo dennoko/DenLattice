@@ -14,10 +14,10 @@ namespace Dennokoworks.DenLattice.Editor
     /// そのためコンポーネントへの確定はマウスを離したときの 1 回だけにし、
     /// ドラッグ中はここを経由して反映する。Undo もドラッグ 1 回につき 1 エントリになる。
     ///
-    /// さらに、編集セッション中はコンポーネント自体が NDMF の監視対象から外れる
-    /// （<c>DenLatticePreviewFilter.ObserveEdits</c>）。そのため
-    /// <see cref="Version"/> はドラッグ中だけでなく、確定・Undo / Redo・編集クリアを含む
-    /// 「セッション中のあらゆる変更」をプレビューへ伝える唯一の合図になっている。
+    /// プレビューノードは合図を待つのではなく、毎フレーム「編集ごとのスタンプ
+    /// （<see cref="GetStamp"/>）と <see cref="MeshEdit.Revision"/>」を前回反映時の値と比べて
+    /// 更新の要否を決める（<see cref="EditState"/>）。スタンプは編集データ単位なので、
+    /// 1 つの対象をドラッグしても関係のない Renderer は再計算されない。
     /// この経路ではパイプラインは作り直されず、生成済みメッシュの頂点だけが書き換わる。
     /// </summary>
     internal static class LiveEdits
@@ -25,12 +25,21 @@ namespace Dennokoworks.DenLattice.Editor
         private static readonly Dictionary<MeshEdit, Dictionary<int, Vector3>> Map =
             new Dictionary<MeshEdit, Dictionary<int, Vector3>>();
 
-        private static int _version;
+        /// <summary>
+        /// 編集データごとの公開スタンプ。<see cref="Publish"/> のたびに単調増加する値を振る。
+        ///
+        /// 単調増加なので、「公開 → クリア → 再公開」でも過去の値と一致しない。
+        /// 未公開（またはクリア済み）の編集は 0 として扱う。
+        /// </summary>
+        private static readonly Dictionary<MeshEdit, int> Stamps = new Dictionary<MeshEdit, int>();
+
+        private static int _stampCounter;
 
         /// <summary>
-        /// 編集内容の世代番号。プレビューノードはこの値が変わったときだけメッシュを更新する。
+        /// 変更の世代番号。<see cref="SyncedVersion"/> へ流す値としてだけ使う。
+        /// 再計算の要否はプレビューノードが <see cref="GetStamp"/> と Revision で判定する。
         /// </summary>
-        internal static int Version => _version;
+        private static int _version;
 
         /// <summary>
         /// 下流フィルタに上書きされている対象がある場合に、NDMF へ変更を伝えるための値。
@@ -53,7 +62,7 @@ namespace Dennokoworks.DenLattice.Editor
         /// この値を進めるとプレビューパイプラインが作り直される。下流ノードは
         /// <c>IRenderFilterNode.Refresh</c> を実装していないことが多く（Avatar Optimizer も未実装）、
         /// その場合はノードごと作り直しになって <c>BakeMesh</c> とジョブが再実行される。
-        /// ドラッグや Undo の連打で叩くと重すぎるので間引く。
+        /// ドラッグのフレームレートそのままで叩くと重すぎるので間引く。
         /// </summary>
         private const double SyncIntervalSeconds = 0.08;
 
@@ -109,7 +118,23 @@ namespace Dennokoworks.DenLattice.Editor
             if (edit == null || deltas == null) return;
 
             Map[edit] = deltas;
+
+            unchecked
+            {
+                // 0 は「未公開」を表すので飛ばす（int を一周した場合に限る）
+                if (++_stampCounter == 0) ++_stampCounter;
+            }
+
+            Stamps[edit] = _stampCounter;
             Invalidate();
+        }
+
+        /// <summary>
+        /// 編集データの未確定データのスタンプ。未公開なら 0。
+        /// </summary>
+        internal static int GetStamp(MeshEdit edit)
+        {
+            return edit != null && Stamps.TryGetValue(edit, out var stamp) ? stamp : 0;
         }
 
         internal static bool TryGet(MeshEdit edit, out Dictionary<int, Vector3> deltas)
@@ -124,13 +149,14 @@ namespace Dennokoworks.DenLattice.Editor
         /// 戻り値があるのは、呼び出し側が「捨てるものが無くても通知だけはしたい」場合に
         /// <see cref="Invalidate"/> を二重に呼ばずに済ませるため。二重に呼ぶと
         /// <see cref="RequestSync"/> の間引き待ちが余分に 1 回積まれ、下流上書き構成では
-        /// 何も変わっていないのに 50ms 後にもう一度パイプラインが作り直される。
+        /// 何も変わっていないのに 80ms 後にもう一度パイプラインが作り直される。
         /// </summary>
         internal static bool Clear()
         {
             if (Map.Count == 0) return false;
 
             Map.Clear();
+            Stamps.Clear();
             Invalidate();
             return true;
         }
